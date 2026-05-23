@@ -1,0 +1,3 @@
+User-agent: *
+Allow: /
+Sitemap: https://wangjinbiao0601-max.github.io/worldcup2026-predict/sitemap.xml
