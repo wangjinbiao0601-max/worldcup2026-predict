@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>2026世界杯预测胜率</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<nav class="nav">
+  <div class="nav-inner">
+    <a href="index.html" class="nav-logo"><span>&#9917;</span> 2026世界杯预测</a>
+    <button class="nav-toggle" onclick="document.querySelector('.nav-links').classList.toggle('open')">
+      <span></span><span></span><span></span>
+    </button>
+    <ul class="nav-links">
+      <li><a href="index.html" class="active">首页</a></li>
+      <li><a href="teams.html">球队中心</a></li>
+      <li><a href="schedule.html">赛程中心</a></li>
+      <li><a href="probability.html">胜率预测</a></li>
+      <li><a href="bracket.html">晋级之路</a></li>
+      <li><a href="vote.html">冠军投票</a></li>
+    </ul>
+  </div>
+</nav>
+
+<section class="hero hero-enhanced">
+  <h1 class="shimmer-text">2026 FIFA 世界杯</h1>
+  <p>美国 · 加拿大 · 墨西哥 联合主办 | 48支球队 | 104场比赛</p>
+  <div class="countdown" id="countdown"></div>
+</section>
+
+<div class="container">
+  <h2 class="section-title">夺冠热门 Top 10</h2>
+  <div class="card-grid" id="hot-teams"></div>
+
+  <div class="mt-24">
+    <h2 class="section-title">今日比赛</h2>
+    <div class="match-grid" id="today-matches"></div>
+  </div>
+
+  <div class="mt-24">
+    <h2 class="section-title">快速导航</h2>
+    <div class="card-grid">
+      <a href="teams.html" class="card">
+        <div class="card-title">&#127758; 球队中心</div>
+        <p class="text-muted">48支球队完整档案 · A-L分组 · FIFA排名 · 国旗一览</p>
+      </a>
+      <a href="schedule.html" class="card">
+        <div class="card-title">&#128197; 赛程中心</div>
+        <p class="text-muted">104场比赛完整赛程 · 小组赛到决赛 · 日期筛选 · 场馆信息</p>
+      </a>
+      <a href="probability.html" class="card">
+        <div class="card-title">&#128200; 胜率预测</div>
+        <p class="text-muted">夺冠概率排行榜 · 小组出线概率 · 基于FIFA排名的ELO模型</p>
+      </a>
+      <a href="bracket.html" class="card">
+        <div class="card-title">&#127937; 晋级之路</div>
+        <p class="text-muted">淘汰赛树状图 · 32强到冠军 · 晋级路径可视化</p>
+      </a>
+    </div>
+  </div>
+</div>
+
+<footer class="footer">
+  <p>2026世界杯预测胜率网站 · 数据基于FIFA排名模拟计算 · 仅供娱乐参考</p>
+  <p style="margin-top:4px;">FIFA World Cup 2026 &copy; June 12 - July 20, 2026</p>
+</footer>
+
+<script src="js/data.js"></script>
+<script src="js/probability.js"></script>
+<script src="js/effects.js"></script>
+<script>
+(function() {
+  // 激活粒子雨
+  Effects.init();
+  Effects.startParticleRain();
+
+  var tn = TOURNAMENT;
+
+  // 倒计时
+  var start = new Date(tn.startDate + 'T00:00:00+08:00');
+  var end = new Date(tn.endDate + 'T23:59:59+08:00');
+  var now = new Date();
+
+  function updateCountdown() {
+    var diff = start - new Date();
+    if (diff <= 0) diff = 0;
+    var d = Math.floor(diff / 86400000);
+    var h = Math.floor((diff % 86400000) / 3600000);
+    var m = Math.floor((diff % 3600000) / 60000);
+    var s = Math.floor((diff % 60000) / 1000);
+    document.getElementById('countdown').innerHTML =
+      '<div class="countdown-item"><div class="countdown-num">' + d + '</div><div class="countdown-label">天</div></div>' +
+      '<div class="countdown-item"><div class="countdown-num">' + h + '</div><div class="countdown-label">时</div></div>' +
+      '<div class="countdown-item"><div class="countdown-num">' + m + '</div><div class="countdown-label">分</div></div>' +
+      '<div class="countdown-item"><div class="countdown-num">' + s + '</div><div class="countdown-label">秒</div></div>';
+  }
+  updateCountdown();
+  setInterval(updateCountdown, 1000);
+
+  // 夺冠热门 Top 10
+  var odds = getCachedOdds().slice(0, 10);
+  var hotHTML = odds.map(function(t, i) {
+    var rankClass = i === 0 ? 'rank-1' : i === 1 ? 'rank-2' : i === 2 ? 'rank-3' : '';
+    return '<a href="teams.html?team=' + t.fifaCode + '" class="card glow-card flip-card" style="display:flex;align-items:center;gap:12px;">' +
+      '<div class="flip-card-inner" style="display:flex;align-items:center;gap:12px;width:100%;">' +
+      '<span class="rank-badge ' + rankClass + '">' + (i+1) + '</span>' +
+      '<img src="' + t.flag + '" class="flag-animated" style="width:40px;height:30px;object-fit:cover;border-radius:3px;" alt="">' +
+      '<div style="flex:1"><div style="font-weight:600;font-size:15px;">' + t.name + '</div><div style="font-size:12px;color:var(--text-secondary);">FIFA #' + t.fifaRank + ' · ' + t.group + '组</div></div>' +
+      '<div style="font-weight:700;font-size:18px;color:var(--accent);">' + t.probability + '%</div>' +
+      '</div>' +
+    '</a>';
+  }).join('');
+  document.getElementById('hot-teams').innerHTML = hotHTML;
+
+  // 今日比赛
+  var today = new Date().toISOString().slice(0, 10);
+  var todayMatches = getMatchesByDate(today);
+  var todayHTML = '';
+  if (todayMatches.length === 0) {
+    var upcoming = MATCHES.find(function(m) { return m.date >= today; });
+    if (upcoming) {
+      var h = getTeamByCode(upcoming.home);
+      var a = getTeamByCode(upcoming.away);
+      todayHTML = '<div class="card text-center" style="padding:40px;"><p class="text-muted" style="font-size:15px;">今日暂无比赛</p><p style="margin-top:8px;font-size:13px;">最近比赛: ' + h.nameCN + ' vs ' + a.nameCN + ' — ' + upcoming.date + '</p></div>';
+    } else {
+      todayHTML = '<div class="card text-center" style="padding:40px;"><p class="text-muted">赛事尚未开始</p></div>';
+    }
+  } else {
+    todayHTML = todayMatches.map(function(m) {
+      var h = getTeamByCode(m.home);
+      var a = getTeamByCode(m.away);
+      var probs = calcMatchProbability(h, a);
+      var stageLabel = m.stage === 'group' ? m.group + '组 第' + m.matchday + '轮' : m.stage;
+      return '<div class="match-card">' +
+        '<div class="match-time"><div class="match-date">' + m.date.slice(5) + '</div><div class="match-hour">' + m.time + '</div></div>' +
+        '<div class="match-teams">' +
+          '<div class="match-team"><img src="' + h.flag + '" alt=""><span class="match-team-name">' + h.nameCN + '</span></div>' +
+          '<span class="match-vs">VS</span>' +
+          '<div class="match-team right"><span class="match-team-name">' + a.nameCN + '</span><img src="' + a.flag + '" alt=""></div>' +
+        '</div>' +
+        '<span class="match-stage">' + stageLabel + '</span>' +
+        '<div style="text-align:center;font-size:12px;min-width:80px;">' +
+          '<span style="color:var(--accent);">' + probs.homeWin + '%</span> · <span style="color:var(--text-tertiary);">' + probs.draw + '%</span> · <span style="color:var(--danger);">' + probs.awayWin + '%</span>' +
+        '</div>' +
+      '</div>';
+    }).join('');
+  }
+  document.getElementById('today-matches').innerHTML = todayHTML;
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>晋级之路 - 2026世界杯</title>
+<link rel="stylesheet" href="css/style.css">
+<style>
+.bracket-tree { overflow-x: auto; padding: 20px 0; }
+.bracket-wrapper { min-width: 1100px; }
+.bracket-stage-row {
+  display: flex; gap: 0; align-items: stretch;
+}
+.bracket-column {
+  flex: 1; min-width: 100px; display: flex; flex-direction: column;
+  justify-content: space-around; padding: 0 6px;
+}
+.bracket-column-header {
+  text-align: center; font-size: 12px; font-weight: 600; color: var(--text-secondary);
+  padding: 8px 0; text-transform: uppercase; letter-spacing: 1px;
+  border-bottom: 1px solid var(--border); margin-bottom: 8px;
+}
+.bracket-slot {
+  border: 1px solid var(--border); border-radius: var(--radius-sm);
+  padding: 8px 10px; margin: 4px 0; background: var(--bg);
+  display: flex; align-items: center; gap: 6px; font-size: 12px;
+  transition: all .2s; cursor: default; position: relative;
+}
+.bracket-slot:hover { border-color: var(--accent); background: var(--accent-light); }
+.bracket-slot.tbd { color: var(--text-tertiary); font-style: italic; }
+.bracket-slot img { width: 20px; height: 15px; object-fit: cover; border-radius: 1px; flex-shrink: 0; }
+.bracket-team-inline { flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.bracket-slot.qualified { border-color: var(--success); }
+.bracket-slot.highlight { border-color: var(--accent); border-width: 2px; }
+
+.bracket-spacer { height: 40px; }
+.bracket-connector-col {
+  display: flex; align-items: center; justify-content: center;
+  width: 30px; flex-shrink: 0;
+}
+.connector-lines {
+  width: 100%; height: 60px; position: relative;
+}
+.connector-lines::before {
+  content: ''; position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+  border-left: 1px solid var(--border);
+}
+</style>
+</head>
+<body>
+
+<nav class="nav">
+  <div class="nav-inner">
+    <a href="index.html" class="nav-logo"><span>&#9917;</span> 2026世界杯预测</a>
+    <button class="nav-toggle" onclick="document.querySelector('.nav-links').classList.toggle('open')">
+      <span></span><span></span><span></span>
+    </button>
+    <ul class="nav-links">
+      <li><a href="index.html">首页</a></li>
+      <li><a href="teams.html">球队中心</a></li>
+      <li><a href="schedule.html">赛程中心</a></li>
+      <li><a href="probability.html">胜率预测</a></li>
+      <li><a href="bracket.html" class="active">晋级之路</a></li>
+      <li><a href="vote.html">冠军投票</a></li>
+    </ul>
+  </div>
+</nav>
+
+<div class="container">
+  <h1 class="section-title">晋级之路</h1>
+  <p class="section-desc">从小组赛晋级预测到最终冠军 · 淘汰赛阶段对阵将随比赛进展更新</p>
+
+  <!-- 12组晋级预测 -->
+  <div class="chart-wrapper mt-24">
+    <h2 class="card-title" style="margin-bottom:16px;">小组赛晋级预测 (各组前2名)</h2>
+    <div class="card-grid" id="group-qualification"></div>
+  </div>
+
+  <!-- 淘汰赛对阵图 -->
+  <div class="chart-wrapper mt-24">
+    <h2 class="card-title" style="margin-bottom:16px;">淘汰赛晋级图</h2>
+    <p class="text-muted mb-16">基于FIFA排名预测的各组前两名 · 32强 → 冠军</p>
+    <div class="bracket-tree">
+      <div class="bracket-wrapper" id="bracket-tree"></div>
+    </div>
+  </div>
+</div>
+
+<footer class="footer">
+  <p>2026世界杯预测胜率网站 · 晋级预测基于FIFA排名模拟 · 实际赛果以官方为准</p>
+</footer>
+
+<script src="js/data.js"></script>
+<script src="js/probability.js"></script>
+<script>
+(function() {
+  // 每组前2名预测 (基于FIFA排名)
+  function getGroupTop2(group) {
+    var teams = getTeamsByGroup(group);
+    teams.sort(function(a, b) { return a.fifaRank - b.fifaRank; });
+    return teams.slice(0, 2);
+  }
+
+  // 渲染小组晋级预测
+  var groupsHTML = '';
+  getAllGroups().forEach(function(g) {
+    var top2 = getGroupTop2(g);
+    groupsHTML += '<div class="card">' +
+      '<div class="card-title">' + g + '组</div>' +
+      '<div style="display:flex;flex-direction:column;gap:6px;">' +
+      top2.map(function(t, i) {
+        return '<div style="display:flex;align-items:center;gap:8px;font-size:14px;">' +
+          '<span style="font-weight:700;color:' + (i===0?'var(--accent)':'var(--text-secondary)') + ';min-width:20px;">' + (i+1) + '</span>' +
+          '<img src="' + t.flag + '" style="width:28px;height:21px;object-fit:cover;border-radius:2px;" alt="">' +
+          '<span>' + t.nameCN + '</span>' +
+          '<span style="font-size:12px;color:var(--text-tertiary);margin-left:auto;">#' + t.fifaRank + '</span>' +
+        '</div>';
+      }).join('') +
+      '</div></div>';
+  });
+  document.getElementById('group-qualification').innerHTML = groupsHTML;
+
+  // 构建淘汰赛树
+  // 32强匹配 (基于mock-matches中的round32比赛)
+  var round32 = MATCHES.filter(function(m) { return m.stage === 'round32'; });
+
+  function renderBracket() {
+    var html = '<div class="bracket-stage-row">';
+
+    // Round of 32
+    html += '<div class="bracket-column"><div class="bracket-column-header">32强</div>';
+    round32.forEach(function(m, i) {
+      var h = m.home ? getTeamByCode(m.home) : null;
+      var a = m.away ? getTeamByCode(m.away) : null;
+      var hWin = h && a ? calcMatchProbability(h, a).homeWin : 50;
+      var winner = hWin >= 50 ? h : a;
+      var loser = hWin >= 50 ? a : h;
+
+      html += '<div class="bracket-slot' + (winner ? ' qualified' : '') + '">';
+      html += h ? '<img src="' + h.flag + '" alt=""><span class="bracket-team-inline">' + h.nameCN + '</span>' : '<span class="bracket-team-inline tbd">待定</span>';
+      html += '</div>';
+      html += '<div class="bracket-slot">';
+      html += a ? '<img src="' + a.flag + '" alt=""><span class="bracket-team-inline">' + a.nameCN + '</span>' : '<span class="bracket-team-inline tbd">待定</span>';
+      html += '</div>';
+      if (i % 2 === 1) html += '<div class="bracket-spacer"></div>';
+    });
+    html += '</div>';
+
+    // Round of 16 (8 slots, each from 2 round32 matches)
+    html += '<div class="bracket-column"><div class="bracket-column-header">16强</div>';
+    for (var r = 0; r < 16; r += 4) {
+      html += '<div class="bracket-slot tbd"><span class="bracket-team-inline">32强胜者</span></div>';
+      html += '<div class="bracket-slot tbd"><span class="bracket-team-inline">32强胜者</span></div>';
+      if (r % 4 === 0 && r < 12) html += '<div class="bracket-spacer" style="height:80px;"></div>';
+    }
+    html += '</div>';
+
+    // Quarter-finals (4 slots)
+    html += '<div class="bracket-column"><div class="bracket-column-header">8强</div>';
+    for (var q = 0; q < 8; q += 4) {
+      html += '<div class="bracket-slot tbd"><span class="bracket-team-inline">16强胜者</span></div><div class="bracket-spacer" style="height:40px;"></div>';
+      html += '<div class="bracket-slot tbd"><span class="bracket-team-inline">16强胜者</span></div>';
+      if (q < 4) html += '<div class="bracket-spacer" style="height:120px;"></div>';
+    }
+    html += '</div>';
+
+    // Semi-finals
+    html += '<div class="bracket-column"><div class="bracket-column-header">半决赛</div>';
+    html += '<div class="bracket-slot tbd"><span class="bracket-team-inline">8强胜者</span></div>';
+    html += '<div class="bracket-spacer" style="height:200px;"></div>';
+    html += '<div class="bracket-slot tbd"><span class="bracket-team-inline">8强胜者</span></div>';
+    html += '</div>';
+
+    // Final
+    html += '<div class="bracket-column"><div class="bracket-column-header">决赛</div>';
+    html += '<div class="bracket-slot tbd" style="margin-top:120px;"><span class="bracket-team-inline">半决赛胜者</span></div>';
+    html += '<div class="bracket-spacer" style="height:24px;"></div>';
+    html += '<div class="bracket-slot tbd"><span class="bracket-team-inline">半决赛胜者</span></div>';
+    html += '</div>';
+
+    // Champion
+    html += '<div class="bracket-column"><div class="bracket-column-header">冠军</div>';
+    html += '<div class="bracket-slot highlight" style="margin-top:160px;text-align:center;justify-content:center;font-weight:600;font-size:14px;">';
+    html += '<span class="bracket-team-inline" style="color:var(--accent);">?</span>';
+    html += '</div>';
+    html += '</div>';
+
+    html += '</div>';
+    document.getElementById('bracket-tree').innerHTML = html;
+  }
+
+  renderBracket();
+})();
+</script>
+</body>
+</html>

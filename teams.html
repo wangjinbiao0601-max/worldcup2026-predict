@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>球队中心 - 2026世界杯</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<nav class="nav">
+  <div class="nav-inner">
+    <a href="index.html" class="nav-logo"><span>&#9917;</span> 2026世界杯预测</a>
+    <button class="nav-toggle" onclick="document.querySelector('.nav-links').classList.toggle('open')">
+      <span></span><span></span><span></span>
+    </button>
+    <ul class="nav-links">
+      <li><a href="index.html">首页</a></li>
+      <li><a href="teams.html" class="active">球队中心</a></li>
+      <li><a href="schedule.html">赛程中心</a></li>
+      <li><a href="probability.html">胜率预测</a></li>
+      <li><a href="bracket.html">晋级之路</a></li>
+      <li><a href="vote.html">冠军投票</a></li>
+    </ul>
+  </div>
+</nav>
+
+<div class="container">
+  <h1 class="section-title">球队中心</h1>
+  <p class="section-desc" id="group-summary">共48支球队，分为A-L共12个小组，每组4队</p>
+
+  <input type="text" class="search-box" id="team-search" placeholder="搜索球队名称...">
+
+  <div class="group-tabs" id="group-tabs"></div>
+  <div class="team-grid" id="team-grid"></div>
+</div>
+
+<!-- 球队详情弹窗 -->
+<div class="modal-overlay" id="team-modal">
+  <div class="modal">
+    <button class="modal-close" onclick="closeModal()">&times;</button>
+    <img class="modal-flag" id="modal-flag" src="" alt="">
+    <div class="modal-name" id="modal-name"></div>
+    <div class="modal-name-en" id="modal-name-en"></div>
+    <div class="modal-stats" id="modal-stats"></div>
+    <div class="mt-16 text-center">
+      <a id="modal-schedule-link" href="#" class="card" style="display:inline-block;padding:8px 20px;">查看赛程</a>
+    </div>
+  </div>
+</div>
+
+<footer class="footer">
+  <p>2026世界杯预测胜率网站 · 球队数据基于官方分组</p>
+</footer>
+
+<script src="js/data.js"></script>
+<script src="js/probability.js"></script>
+<script>
+(function() {
+  var currentGroup = 'all';
+  var searchTerm = '';
+
+  // 分组标签
+  var groups = getAllGroups();
+  var tabsHTML = '<span class="group-tab active" data-group="all">全部</span>';
+  groups.forEach(function(g) {
+    tabsHTML += '<span class="group-tab" data-group="' + g + '">' + g + '组</span>';
+  });
+  document.getElementById('group-tabs').innerHTML = tabsHTML;
+
+  // 分组点击
+  document.getElementById('group-tabs').addEventListener('click', function(e) {
+    if (e.target.classList.contains('group-tab')) {
+      document.querySelectorAll('.group-tab').forEach(function(t) { t.classList.remove('active'); });
+      e.target.classList.add('active');
+      currentGroup = e.target.dataset.group;
+      renderTeams();
+    }
+  });
+
+  // 搜索
+  document.getElementById('team-search').addEventListener('input', function(e) {
+    searchTerm = e.target.value.toLowerCase();
+    renderTeams();
+  });
+
+  // 渲染球队
+  function renderTeams() {
+    var teams = TEAMS;
+    if (currentGroup !== 'all') {
+      teams = getTeamsByGroup(currentGroup);
+    }
+    if (searchTerm) {
+      teams = teams.filter(function(t) {
+        return t.nameCN.toLowerCase().includes(searchTerm) || t.name.toLowerCase().includes(searchTerm) || t.fifaCode.toLowerCase().includes(searchTerm);
+      });
+    }
+    document.getElementById('group-summary').textContent =
+      '共 ' + teams.length + ' 支球队' + (currentGroup !== 'all' ? ' · ' + currentGroup + '组' : '');
+
+    document.getElementById('team-grid').innerHTML = teams.map(function(t) {
+      return '<div class="team-card" onclick="openTeamModal(\'' + t.fifaCode + '\')">' +
+        '<img src="' + t.flag + '" alt="">' +
+        '<div class="team-card-info">' +
+          '<div class="team-card-name">' + t.nameCN + '</div>' +
+          '<div class="team-card-rank">FIFA #' + t.fifaRank + '</div>' +
+        '</div>' +
+        '<span class="team-card-group">' + t.group + '组</span>' +
+      '</div>';
+    }).join('');
+  }
+
+  renderTeams();
+
+  // 模态弹窗
+  window.openTeamModal = function(code) {
+    var t = getTeamByCode(code);
+    if (!t) return;
+    document.getElementById('modal-flag').src = t.flag;
+    document.getElementById('modal-name').textContent = t.nameCN;
+    document.getElementById('modal-name-en').textContent = t.name + ' (' + t.fifaCode + ')';
+
+    var odds = getCachedOdds().find(function(o) { return o.fifaCode === code; });
+    var champProb = odds ? odds.probability : '-';
+    var champRank = odds ? getCachedOdds().indexOf(odds) + 1 : '-';
+
+    var groupProbs = calcGroupQualification(t.group);
+    var myProb = groupProbs.find(function(p) { return p.id === t.id; });
+    var qualifyProb = myProb ? myProb.qualifyProb + '%' : '-';
+
+    document.getElementById('modal-stats').innerHTML =
+      '<div class="modal-stat"><div class="modal-stat-val">#' + t.fifaRank + '</div><div class="modal-stat-label">FIFA排名</div></div>' +
+      '<div class="modal-stat"><div class="modal-stat-val">' + t.group + '组</div><div class="modal-stat-label">分组</div></div>' +
+      '<div class="modal-stat"><div class="modal-stat-val">' + champRank + '</div><div class="modal-stat-label">夺冠热门排名</div></div>' +
+      '<div class="modal-stat"><div class="modal-stat-val">' + qualifyProb + '</div><div class="modal-stat-label">小组出线概率</div></div>';
+
+    document.getElementById('modal-schedule-link').href = 'schedule.html?team=' + t.fifaCode;
+    document.getElementById('team-modal').classList.add('open');
+  };
+
+  window.closeModal = function() {
+    document.getElementById('team-modal').classList.remove('open');
+  };
+  document.getElementById('team-modal').addEventListener('click', function(e) {
+    if (e.target === this) closeModal();
+  });
+
+  // URL参数：直接打开某球队
+  var params = new URLSearchParams(window.location.search);
+  var teamCode = params.get('team');
+  if (teamCode) { openTeamModal(teamCode); }
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>赛程中心 - 2026世界杯</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<nav class="nav">
+  <div class="nav-inner">
+    <a href="index.html" class="nav-logo"><span>&#9917;</span> 2026世界杯预测</a>
+    <button class="nav-toggle" onclick="document.querySelector('.nav-links').classList.toggle('open')">
+      <span></span><span></span><span></span>
+    </button>
+    <ul class="nav-links">
+      <li><a href="index.html">首页</a></li>
+      <li><a href="teams.html">球队中心</a></li>
+      <li><a href="schedule.html" class="active">赛程中心</a></li>
+      <li><a href="probability.html">胜率预测</a></li>
+      <li><a href="bracket.html">晋级之路</a></li>
+      <li><a href="vote.html">冠军投票</a></li>
+    </ul>
+  </div>
+</nav>
+
+<div class="container">
+  <h1 class="section-title">赛程中心</h1>
+  <p class="section-desc">共104场比赛 · 72场小组赛 + 32场淘汰赛 · 时间均为北京时间</p>
+
+  <div class="stage-filters" id="stage-filters"></div>
+
+  <div class="group-tabs hidden" id="group-filter-row">
+    <span class="group-tab active" data-group="all">全部小组</span>
+  </div>
+
+  <div id="match-count" class="text-muted mb-16"></div>
+  <div class="match-grid" id="match-list"></div>
+</div>
+
+<footer class="footer">
+  <p>2026世界杯预测胜率网站 · 赛程基于官方安排 · 时间均为北京时间 (UTC+8)</p>
+</footer>
+
+<script src="js/data.js"></script>
+<script src="js/probability.js"></script>
+<script>
+(function() {
+  var currentStage = 'all';
+  var currentGroup = 'all';
+
+  // 阶段标签
+  var stages = [
+    { id: 'all', label: '全部比赛' },
+    { id: 'group', label: '小组赛' },
+    { id: 'round32', label: '32强' },
+    { id: 'round16', label: '16强' },
+    { id: 'quarter', label: '8强' },
+    { id: 'semi', label: '半决赛' },
+    { id: 'thirdPlace', label: '季军赛' },
+    { id: 'final', label: '决赛' },
+  ];
+
+  var filtersHTML = stages.map(function(s) {
+    return '<span class="stage-filter' + (s.id === currentStage ? ' active' : '') + '" data-stage="' + s.id + '">' + s.label + '</span>';
+  }).join('');
+  document.getElementById('stage-filters').innerHTML = filtersHTML;
+
+  // 阶段点击
+  document.getElementById('stage-filters').addEventListener('click', function(e) {
+    if (e.target.classList.contains('stage-filter')) {
+      document.querySelectorAll('.stage-filter').forEach(function(f) { f.classList.remove('active'); });
+      e.target.classList.add('active');
+      currentStage = e.target.dataset.stage;
+      currentGroup = 'all';
+      toggleGroupFilter();
+      renderMatches();
+    }
+  });
+
+  function toggleGroupFilter() {
+    var row = document.getElementById('group-filter-row');
+    if (currentStage === 'group' || currentStage === 'all') {
+      row.classList.remove('hidden');
+    } else {
+      row.classList.add('hidden');
+    }
+  }
+
+  // 小组筛选
+  var groupRow = document.getElementById('group-filter-row');
+  var groups = getAllGroups();
+  groups.forEach(function(g) {
+    var span = document.createElement('span');
+    span.className = 'group-tab';
+    span.dataset.group = g;
+    span.textContent = g + '组';
+    groupRow.appendChild(span);
+  });
+  groupRow.addEventListener('click', function(e) {
+    if (e.target.classList.contains('group-tab')) {
+      document.querySelectorAll('#group-filter-row .group-tab').forEach(function(t) { t.classList.remove('active'); });
+      e.target.classList.add('active');
+      currentGroup = e.target.dataset.group;
+      renderMatches();
+    }
+  });
+
+  // 渲染
+  function renderMatches() {
+    var matches = MATCHES;
+
+    if (currentStage !== 'all') {
+      matches = matches.filter(function(m) { return m.stage === currentStage; });
+    }
+    if (currentGroup !== 'all' && (currentStage === 'group' || currentStage === 'all')) {
+      matches = matches.filter(function(m) { return m.group === currentGroup; });
+    }
+
+    document.getElementById('match-count').textContent = '共 ' + matches.length + ' 场比赛';
+
+    // 按日期分组
+    var dates = {};
+    matches.forEach(function(m) {
+      if (!dates[m.date]) dates[m.date] = [];
+      dates[m.date].push(m);
+    });
+
+    var dateKeys = Object.keys(dates).sort();
+    var html = '';
+    dateKeys.forEach(function(date) {
+      html += '<div class="match-date-header">' + date + ' (' +
+        ['日','一','二','三','四','五','六'][new Date(date + 'T00:00:00+08:00').getDay()] + ')</div>';
+
+      dates[date].forEach(function(m) {
+        var h = getTeamByCode(m.home);
+        var a = getTeamByCode(m.away);
+        var stageLabels = {
+          group: m.group + '组 M' + m.matchday, round32: '32强', round16: '16强',
+          quarter: '8强', semi: '半决赛', thirdPlace: '季军赛', final: '决赛'
+        };
+        var stageLabel = stageLabels[m.stage] || m.stage;
+
+        var homeHTML, awayHTML, scoreHTML, probHTML = '';
+
+        if (h) {
+          homeHTML = '<div class="match-team"><img src="' + h.flag + '" alt=""><span class="match-team-name">' + h.nameCN + '</span></div>';
+        } else {
+          homeHTML = '<div class="match-team"><span class="match-team-name" style="color:var(--text-tertiary);">待定</span></div>';
+        }
+        if (a) {
+          awayHTML = '<div class="match-team right"><span class="match-team-name">' + a.nameCN + '</span><img src="' + a.flag + '" alt=""></div>';
+        } else {
+          awayHTML = '<div class="match-team right"><span class="match-team-name" style="color:var(--text-tertiary);">待定</span></div>';
+        }
+
+        if (m.score) {
+          scoreHTML = '<div class="match-score">' + m.score + '</div>';
+        } else {
+          scoreHTML = '<div class="match-score scheduled">VS</div>';
+        }
+
+        if (h && a) {
+          var probs = calcMatchProbability(h, a);
+          probHTML = '<div style="text-align:center;font-size:12px;min-width:90px;">' +
+            '<span style="color:var(--accent);">' + probs.homeWin + '%</span> · ' +
+            '<span style="color:var(--text-tertiary);">' + probs.draw + '%</span> · ' +
+            '<span style="color:var(--danger);">' + probs.awayWin + '%</span></div>';
+        } else {
+          probHTML = '<div style="min-width:90px;"></div>';
+        }
+
+        html += '<div class="match-card">' +
+          '<div class="match-time"><div class="match-date">' + m.date.slice(5) + '</div><div class="match-hour">' + m.time + '</div></div>' +
+          '<div class="match-teams">' + homeHTML + '<span class="match-vs">VS</span>' + awayHTML + '</div>' +
+          scoreHTML +
+          '<span class="match-stage">' + stageLabel + '</span>' +
+          probHTML +
+          '<div class="match-venue">' + m.city + '</div>' +
+        '</div>';
+      });
+    });
+    document.getElementById('match-list').innerHTML = html;
+  }
+
+  // URL参数：筛选某球队的赛程
+  var params = new URLSearchParams(window.location.search);
+  var teamCode = params.get('team');
+  if (teamCode) {
+    var team = getTeamByCode(teamCode);
+    if (team) {
+      document.querySelector('.section-desc').textContent = team.nameCN + ' (' + team.fifaCode + ') 的赛程';
+      var teamMatches = MATCHES.filter(function(m) { return m.home === teamCode || m.away === teamCode; });
+      var allStageFilters = document.querySelectorAll('.stage-filter');
+      allStageFilters.forEach(function(f) { f.classList.remove('active'); });
+      document.getElementById('match-count').textContent = '共 ' + teamMatches.length + ' 场比赛';
+      renderTeamMatches(teamMatches);
+      return;
+    }
+  }
+
+  renderMatches();
+
+  function renderTeamMatches(matches) {
+    var dates = {};
+    matches.forEach(function(m) {
+      if (!dates[m.date]) dates[m.date] = [];
+      dates[m.date].push(m);
+    });
+    var dateKeys = Object.keys(dates).sort();
+    var html = '';
+    dateKeys.forEach(function(date) {
+      html += '<div class="match-date-header">' + date + '</div>';
+      dates[date].forEach(function(m) {
+        var h = getTeamByCode(m.home);
+        var a = getTeamByCode(m.away);
+        var stageLabels = {group: m.group+'组 M'+m.matchday, round32:'32强', round16:'16强', quarter:'8强', semi:'半决赛', thirdPlace:'季军赛', final:'决赛'};
+
+        html += '<div class="match-card">' +
+          '<div class="match-time"><div class="match-date">' + m.date.slice(5) + '</div><div class="match-hour">' + m.time + '</div></div>' +
+          '<div class="match-teams">' +
+            '<div class="match-team"><img src="' + (h?h.flag:'') + '" alt=""><span class="match-team-name">' + (h?h.nameCN:'待定') + '</span></div>' +
+            '<span class="match-vs">VS</span>' +
+            '<div class="match-team right"><span class="match-team-name">' + (a?a.nameCN:'待定') + '</span><img src="' + (a?a.flag:'') + '" alt=""></div>' +
+          '</div>' +
+          '<span class="match-stage">' + (stageLabels[m.stage]||m.stage) + '</span>' +
+          '<div class="match-venue">' + m.city + '</div>' +
+        '</div>';
+      });
+    });
+    document.getElementById('match-list').innerHTML = html;
+  }
+})();
+</script>
+</body>
+</html>

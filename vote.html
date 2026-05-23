@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>冠军投票 - 2026世界杯预测</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<nav class="nav">
+  <div class="nav-inner">
+    <a href="index.html" class="nav-logo"><span>&#9917;</span> 2026世界杯预测</a>
+    <button class="nav-toggle" onclick="document.querySelector('.nav-links').classList.toggle('open')">
+      <span></span><span></span><span></span>
+    </button>
+    <ul class="nav-links">
+      <li><a href="index.html">首页</a></li>
+      <li><a href="teams.html">球队中心</a></li>
+      <li><a href="schedule.html">赛程中心</a></li>
+      <li><a href="probability.html">胜率预测</a></li>
+      <li><a href="bracket.html">晋级之路</a></li>
+      <li><a href="vote.html" class="active">冠军投票</a></li>
+    </ul>
+  </div>
+</nav>
+
+<div class="container">
+
+  <!-- 投票区域 -->
+  <div id="vote-section">
+    <h1 class="section-title">&#127942; 冠军预测投票</h1>
+    <p class="section-desc">选出你心中的2026世界杯冠军和四强球队，看看有多少人和你眼光一致！</p>
+
+    <div class="chart-wrapper">
+      <h2 class="card-title" style="margin-bottom:8px;">第一步：选择冠军</h2>
+      <p class="text-muted mb-16" id="champion-hint">请点击选择一支球队作为冠军</p>
+      <div class="vote-grid" id="champion-grid"></div>
+    </div>
+
+    <div class="chart-wrapper mt-24" id="top4-section" style="opacity:.4;pointer-events:none;">
+      <h2 class="card-title" style="margin-bottom:8px;">第二步：选择四强（不含冠军）</h2>
+      <p class="text-muted mb-16" id="top4-hint">再选3支四强球队 · 已选 <span id="top4-count">0</span>/3</p>
+      <div class="vote-grid" id="top4-grid"></div>
+    </div>
+
+    <div class="vote-actions">
+      <button class="btn btn-primary" id="btn-submit" disabled onclick="submitVote()">提交我的预测</button>
+      <button class="btn" onclick="resetVote()" id="btn-reset">重新选择</button>
+    </div>
+  </div>
+
+  <!-- 结果区域 -->
+  <div id="result-section" class="hidden">
+    <h1 class="section-title">&#128200; 全球投票结果</h1>
+    <p class="section-desc" id="result-personal"></p>
+
+    <!-- 个人选择 -->
+    <div class="chart-wrapper" id="my-picks-wrapper">
+      <h2 class="card-title">我的预测</h2>
+      <div id="my-picks"></div>
+    </div>
+
+    <!-- Chart.js 全球投票 -->
+    <div class="chart-wrapper mt-24">
+      <h2 class="card-title" style="margin-bottom:16px;">全球网友冠军投票 TOP 10</h2>
+      <div style="position:relative;width:100%;height:400px;">
+        <canvas id="voteChart" role="img" aria-label="全球冠军投票分布图"></canvas>
+      </div>
+    </div>
+
+    <!-- 投票排行表格 -->
+    <div class="chart-wrapper mt-24">
+      <h2 class="card-title" style="margin-bottom:16px;">完整排行榜</h2>
+      <table class="data-table" id="vote-table"></table>
+    </div>
+
+    <!-- 趣味彩蛋 -->
+    <div class="chart-wrapper mt-24 text-center" id="easter-egg"></div>
+
+    <!-- 分享海报预览 -->
+    <div class="chart-wrapper mt-24" id="share-section">
+      <h2 class="card-title" style="margin-bottom:16px;">&#128247; 分享我的预测</h2>
+      <div class="share-preview" id="share-poster">
+        <div style="font-size:13px;opacity:.6;margin-bottom:8px;">&#9917; 2026世界杯预测</div>
+        <div class="share-title">我的夺冠预测</div>
+        <div class="share-champion" id="share-champion"></div>
+        <div class="share-teams" id="share-teams"></div>
+        <div class="share-footer">2026世界杯预测胜率网站 · 6月12日开幕</div>
+      </div>
+      <div class="text-center mt-16">
+        <button class="btn btn-success" onclick="sharePoster()">&#128247; 截图分享到朋友圈</button>
+      </div>
+    </div>
+
+    <div class="text-center mt-24">
+      <button class="btn" onclick="resetVote()">&#128260; 重新投票</button>
+    </div>
+  </div>
+
+</div>
+
+<footer class="footer">
+  <p>2026世界杯预测胜率网站 · 投票数据存储于本地 · 全球票数为模拟数据</p>
+</footer>
+
+<script src="js/data.js"></script>
+<script src="js/probability.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<script>
+(function() {
+  var selectedChampion = null;
+  var selectedTop4 = [];
+
+  // 初始化投票卡片
+  var teams = TEAMS.sort(function(a, b) { return b.fifaRank - a.fifaRank; });
+  renderVoteCards();
+
+  // 检查已有投票
+  var savedVote = null;
+  try { savedVote = JSON.parse(localStorage.getItem('wc2026_vote')); } catch(e) {}
+  if (savedVote) {
+    showResults(savedVote);
+    return;
+  }
+
+  function renderVoteCards() {
+    var champHTML = '';
+    teams.forEach(function(t) {
+      champHTML += '<div class="vote-card" data-code="' + t.fifaCode + '" onclick="selectChampion(\'' + t.fifaCode + '\')">' +
+        '<img src="' + t.flag + '" class="flag-animated" alt=""><div class="vote-card-name">' + t.nameCN + '</div>' +
+        '<div class="vote-card-rank">#' + t.fifaRank + '</div></div>';
+    });
+    document.getElementById('champion-grid').innerHTML = champHTML;
+    document.getElementById('top4-grid').innerHTML = champHTML.replace(/selectChampion/g, 'selectTop4');
+  }
+
+  window.selectChampion = function(code) {
+    selectedChampion = code;
+    selectedTop4 = [];
+    document.querySelectorAll('#champion-grid .vote-card').forEach(function(c) {
+      c.classList.toggle('selected', c.dataset.code === code);
+    });
+    document.querySelectorAll('#top4-grid .vote-card').forEach(function(c) {
+      c.classList.remove('selected');
+    });
+    document.getElementById('champion-hint').textContent = '已选择: ' + getTeamByCode(code).nameCN;
+    document.getElementById('champion-hint').style.color = 'var(--accent)';
+    document.getElementById('champion-hint').style.fontWeight = '600';
+    document.getElementById('top4-section').style.opacity = '1';
+    document.getElementById('top4-section').style.pointerEvents = 'auto';
+    document.getElementById('top4-count').textContent = '0';
+    checkSubmitReady();
+  };
+
+  window.selectTop4 = function(code) {
+    if (code === selectedChampion) return;
+    var idx = selectedTop4.indexOf(code);
+    if (idx >= 0) {
+      selectedTop4.splice(idx, 1);
+      document.querySelector('#top4-grid .vote-card[data-code="' + code + '"]').classList.remove('selected');
+    } else {
+      if (selectedTop4.length >= 3) {
+        var removed = selectedTop4.shift();
+        document.querySelector('#top4-grid .vote-card[data-code="' + removed + '"]').classList.remove('selected');
+      }
+      selectedTop4.push(code);
+      document.querySelector('#top4-grid .vote-card[data-code="' + code + '"]').classList.add('selected');
+    }
+    document.getElementById('top4-count').textContent = selectedTop4.length;
+    checkSubmitReady();
+  };
+
+  function checkSubmitReady() {
+    var btn = document.getElementById('btn-submit');
+    btn.disabled = !(selectedChampion && selectedTop4.length === 3);
+  }
+
+  window.submitVote = function() {
+    if (!selectedChampion || selectedTop4.length !== 3) return;
+    var vote = { champion: selectedChampion, top4: selectedTop4, time: new Date().toISOString() };
+    localStorage.setItem('wc2026_vote', JSON.stringify(vote));
+    showResults(vote);
+  };
+
+  window.resetVote = function() {
+    selectedChampion = null;
+    selectedTop4 = [];
+    localStorage.removeItem('wc2026_vote');
+    document.getElementById('vote-section').style.display = 'block';
+    document.getElementById('result-section').classList.add('hidden');
+    document.getElementById('champion-hint').textContent = '请点击选择一支球队作为冠军';
+    document.getElementById('champion-hint').style.color = '';
+    document.getElementById('champion-hint').style.fontWeight = '';
+    document.getElementById('top4-section').style.opacity = '.4';
+    document.getElementById('top4-section').style.pointerEvents = 'none';
+    document.getElementById('top4-count').textContent = '0';
+    document.getElementById('btn-submit').disabled = true;
+    document.querySelectorAll('.vote-card').forEach(function(c) { c.classList.remove('selected'); });
+    renderVoteCards();
+  };
+
+  // ============ 结果展示 ============
+  function showResults(vote) {
+    document.getElementById('vote-section').style.display = 'none';
+    document.getElementById('result-section').classList.remove('hidden');
+
+    var champ = getTeamByCode(vote.champion);
+    var top4Teams = vote.top4.map(getTeamByCode);
+
+    // 模拟全球投票数据
+    var globalVotes = generateGlobalVotes(vote.champion);
+
+    // 个人选择展示
+    var picksHTML = '<div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;justify-content:center;">' +
+      '<span class="result-badge highlight">&#127942; 冠军: ' + champ.nameCN + '</span>';
+    top4Teams.forEach(function(t) {
+      picksHTML += '<span class="result-badge">' + t.nameCN + '</span>';
+    });
+    picksHTML += '</div>';
+    document.getElementById('my-picks').innerHTML = picksHTML;
+
+    // 个人统计
+    var totalVotes = globalVotes.total;
+    var champRank = -1;
+    var userCount = 0;
+    globalVotes.teams.forEach(function(t, i) {
+      if (t.code === vote.champion) { champRank = i + 1; userCount = t.votes; }
+    });
+    var pctUsers = totalVotes > 0 ? Math.round((1 - champRank / globalVotes.teams.length) * 100) : 50;
+
+    document.getElementById('result-personal').innerHTML =
+      '你选择的冠军 <strong>' + champ.nameCN + '</strong> 在全球投票中排名 <strong>#' + champRank + '</strong>，' +
+      '共 <strong>' + userCount.toLocaleString() + '</strong> 人投票。';
+
+    // Chart.js
+    var top10 = globalVotes.teams.slice(0, 10);
+    var isDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+    var colors = top10.map(function(_, i) {
+      var palette = ['#fbbf24','#94a3b8','#d97706','#3b82f6','#059669','#dc2626','#8b5cf6','#ec4899','#14b8a6','#f97316'];
+      return palette[i];
+    });
+
+    var ctx = document.getElementById('voteChart');
+    var existingChart = Chart.getChart(ctx);
+    if (existingChart) existingChart.destroy();
+
+    new Chart(ctx, {
+      type: 'bar',
+      data: {
+        labels: top10.map(function(t) { return t.name; }),
+        datasets: [{
+          label: '投票数',
+          data: top10.map(function(t) { return t.votes; }),
+          backgroundColor: colors,
+          borderRadius: 4,
+        }]
+      },
+      options: {
+        indexAxis: 'y',
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: { legend: { display: false } },
+        scales: {
+          x: {
+            ticks: { callback: function(v) { return (v/1000).toFixed(0) + 'K'; }, color: isDark ? '#94a3b8' : '#6c757d' },
+            grid: { color: isDark ? 'rgba(255,255,255,.06)' : 'rgba(0,0,0,.06)' }
+          },
+          y: {
+            ticks: { color: isDark ? '#94a3b8' : '#6c757d' },
+            grid: { display: false }
+          }
+        }
+      }
+    });
+
+    // 表格
+    var tableHTML = '<thead><tr><th>排名</th><th>球队</th><th>投票数</th><th>占比</th><th>概率条</th></tr></thead><tbody>';
+    globalVotes.teams.slice(0, 20).forEach(function(t, i) {
+      var rankClass = i === 0 ? 'rank-1' : i === 1 ? 'rank-2' : i === 2 ? 'rank-3' : '';
+      var isUserPick = t.code === vote.champion || vote.top4.indexOf(t.code) >= 0;
+      var pct = Math.round(t.votes / totalVotes * 10000) / 100;
+      tableHTML += '<tr' + (isUserPick ? ' style="background:var(--accent-light);"' : '') + '>' +
+        '<td><span class="rank-badge ' + rankClass + '">' + (i+1) + '</span></td>' +
+        '<td><div class="prob-cell"><img class="prob-flag" src="' + t.flag + '" alt=""><span>' + t.name + '</span>' + (isUserPick ? ' <span style="font-size:11px;color:var(--accent);">选的</span>' : '') + '</div></td>' +
+        '<td style="font-weight:600;">' + t.votes.toLocaleString() + '</td>' +
+        '<td>' + pct + '%</td>' +
+        '<td><div class="prob-bar-bg"><div class="prob-bar" style="width:' + Math.min(pct, 100) + '%"></div></div></td>' +
+      '</tr>';
+    });
+    tableHTML += '</tbody>';
+    document.getElementById('vote-table').innerHTML = tableHTML;
+
+    // 彩蛋
+    document.getElementById('easter-egg').innerHTML =
+      '<div style="font-size:40px;margin-bottom:8px;">&#127881;</div>' +
+      '<p style="font-size:18px;font-weight:600;">你的眼光战胜了 <span style="color:var(--accent);font-size:22px;">' + pctUsers + '%</span> 的网友！</p>' +
+      '<p class="text-muted" style="margin-top:4px;">全球共 <strong>' + totalVotes.toLocaleString() + '</strong> 人参与投票</p>';
+
+    // 分享海报
+    document.getElementById('share-champion').textContent = champ.nameCN;
+    var shareTeamsHTML = top4Teams.map(function(t) {
+      return '<span class="share-team-tag"><img src="' + t.flag + '" alt="">' + t.nameCN + '</span>';
+    }).join('');
+    document.getElementById('share-teams').innerHTML = shareTeamsHTML;
+  }
+
+  // 模拟全球投票
+  function generateGlobalVotes(userChampionCode) {
+    var odds = getCachedOdds();
+    var baseTotal = 328000 + Math.floor(Math.random() * 50000);
+    var votesArr = [];
+
+    odds.forEach(function(t) {
+      var factor = Math.pow(1.15, 20 - odds.indexOf(t));
+      votesArr.push({
+        code: t.fifaCode,
+        name: t.name,
+        flag: t.flag,
+        votes: Math.floor(baseTotal * t.probability / 100 * factor / 5),
+      });
+    });
+
+    votesArr.sort(function(a, b) { return b.votes - a.votes; });
+    var total = votesArr.reduce(function(s, t) { return s + t.votes; }, 0);
+    return { teams: votesArr, total: total };
+  }
+
+  window.sharePoster = function() {
+    alert('长按或右键保存海报图片，分享到朋友圈！\n\n也可以使用浏览器截图工具(Ctrl+Shift+S)截取下方海报区域。');
+    document.getElementById('share-section').scrollIntoView({ behavior: 'smooth' });
+  };
+})();
+</script>
+</body>
+</html>
