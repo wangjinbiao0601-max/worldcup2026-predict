@@ -77,18 +77,20 @@
 <script src="js/probability.js"></script>
 <script>
 (function() {
+  function L(text) { return typeof I18N !== 'undefined' ? I18N.t(text) : text; }
   var currentGroup = 'all';
   var searchTerm = '';
 
-  // 分组标签
-  var groups = getAllGroups();
-  var tabsHTML = '<span class="group-tab active" data-group="all">全部</span>';
-  groups.forEach(function(g) {
-    tabsHTML += '<span class="group-tab" data-group="' + g + '">' + g + '组</span>';
-  });
-  document.getElementById('group-tabs').innerHTML = tabsHTML;
+  function renderTabs() {
+    var groups = getAllGroups();
+    var tabsHTML = '<span class="group-tab active" data-group="all">' + L('全部') + '</span>';
+    groups.forEach(function(g) {
+      tabsHTML += '<span class="group-tab" data-group="' + g + '">' + g + L('组') + '</span>';
+    });
+    document.getElementById('group-tabs').innerHTML = tabsHTML;
+  }
+  renderTabs();
 
-  // 分组点击
   document.getElementById('group-tabs').addEventListener('click', function(e) {
     if (e.target.classList.contains('group-tab')) {
       document.querySelectorAll('.group-tab').forEach(function(t) { t.classList.remove('active'); });
@@ -98,25 +100,23 @@
     }
   });
 
-  // 搜索
   document.getElementById('team-search').addEventListener('input', function(e) {
     searchTerm = e.target.value.toLowerCase();
     renderTeams();
   });
 
-  // 渲染球队
   function renderTeams() {
     var teams = TEAMS;
-    if (currentGroup !== 'all') {
-      teams = getTeamsByGroup(currentGroup);
-    }
+    if (currentGroup !== 'all') teams = getTeamsByGroup(currentGroup);
     if (searchTerm) {
       teams = teams.filter(function(t) {
         return t.nameCN.toLowerCase().includes(searchTerm) || t.name.toLowerCase().includes(searchTerm) || t.fifaCode.toLowerCase().includes(searchTerm);
       });
     }
+    var groupWord = L('组');
+    var teamWord = L('支球队');
     document.getElementById('group-summary').textContent =
-      '共 ' + teams.length + ' 支球队' + (currentGroup !== 'all' ? ' · ' + currentGroup + '组' : '');
+      L('共') + ' ' + teams.length + ' ' + teamWord + (currentGroup !== 'all' ? ' · ' + currentGroup + groupWord : '');
 
     document.getElementById('team-grid').innerHTML = teams.map(function(t) {
       return '<div class="team-card" onclick="openTeamModal(\'' + t.fifaCode + '\')">' +
@@ -125,14 +125,13 @@
           '<div class="team-card-name">' + t.nameCN + '</div>' +
           '<div class="team-card-rank">FIFA #' + t.fifaRank + '</div>' +
         '</div>' +
-        '<span class="team-card-group">' + t.group + '组</span>' +
+        '<span class="team-card-group">' + t.group + groupWord + '</span>' +
       '</div>';
     }).join('');
   }
 
   renderTeams();
 
-  // 模态弹窗
   window.openTeamModal = function(code) {
     var t = getTeamByCode(code);
     if (!t) return;
@@ -149,26 +148,26 @@
     var qualifyProb = myProb ? myProb.qualifyProb + '%' : '-';
 
     document.getElementById('modal-stats').innerHTML =
-      '<div class="modal-stat"><div class="modal-stat-val">#' + t.fifaRank + '</div><div class="modal-stat-label">FIFA排名</div></div>' +
-      '<div class="modal-stat"><div class="modal-stat-val">' + t.group + '组</div><div class="modal-stat-label">分组</div></div>' +
-      '<div class="modal-stat"><div class="modal-stat-val">' + champRank + '</div><div class="modal-stat-label">夺冠热门排名</div></div>' +
-      '<div class="modal-stat"><div class="modal-stat-val">' + qualifyProb + '</div><div class="modal-stat-label">小组出线概率</div></div>';
+      '<div class="modal-stat"><div class="modal-stat-val">#' + t.fifaRank + '</div><div class="modal-stat-label">' + L('FIFA排名') + '</div></div>' +
+      '<div class="modal-stat"><div class="modal-stat-val">' + t.group + L('组') + '</div><div class="modal-stat-label">' + L('分组') + '</div></div>' +
+      '<div class="modal-stat"><div class="modal-stat-val">' + champRank + '</div><div class="modal-stat-label">' + L('夺冠热门排名') + '</div></div>' +
+      '<div class="modal-stat"><div class="modal-stat-val">' + qualifyProb + '</div><div class="modal-stat-label">' + L('小组出线概率') + '</div></div>';
 
     document.getElementById('modal-schedule-link').href = 'schedule.html?team=' + t.fifaCode;
     document.getElementById('team-modal').classList.add('open');
   };
 
-  window.closeModal = function() {
-    document.getElementById('team-modal').classList.remove('open');
-  };
-  document.getElementById('team-modal').addEventListener('click', function(e) {
-    if (e.target === this) closeModal();
-  });
+  window.closeModal = function() { document.getElementById('team-modal').classList.remove('open'); };
+  document.getElementById('team-modal').addEventListener('click', function(e) { if (e.target === this) closeModal(); });
 
-  // URL参数：直接打开某球队
   var params = new URLSearchParams(window.location.search);
   var teamCode = params.get('team');
   if (teamCode) { openTeamModal(teamCode); }
+
+  window.renderLang = function() {
+    renderTabs();
+    renderTeams();
+  };
 })();
 </script>
 </body>
