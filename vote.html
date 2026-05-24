@@ -5,7 +5,7 @@
   <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-3006326176617264"
      crossorigin="anonymous"></script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>冠军投票 | 选出你的2026世界杯冠军 — 2026世界杯预测</title>
+<title data-i18n-title="冠军投票 | 选出你的2026世界杯冠军 — 2026世界杯预测">冠军投票 | 选出你的2026世界杯冠军 — 2026世界杯预测</title>
   <meta name="description" content="2026世界杯冠军预测投票。选择你心中的冠军和四强球队，查看全球网友投票分布，生成分享海报。">
   <meta name="keywords" content="世界杯投票,冠军预测,2026世界杯冠军,四强预测,世界杯竞猜">
   <meta name="robots" content="index, follow, max-image-preview:large">
@@ -23,23 +23,25 @@
   <meta name="twitter:title" content="冠军投票 | 选出你的2026世界杯冠军 — 2026世界杯预测">
   <meta name="twitter:description" content="2026世界杯冠军预测投票。选择你心中的冠军和四强球队，查看全球网友投票分布，生成分享海报。">
 <link rel="stylesheet" href="css/style.css">
+  <script src="js/i18n.js" defer></script>
 </head>
 <body>
 
 <nav class="nav">
   <div class="nav-inner">
-    <a href="index.html" class="nav-logo"><span>&#9917;</span> 2026世界杯预测</a>
+    <a href="index.html" class="nav-logo"><span>&#9917;</span> <span data-i18n="2026世界杯预测">2026世界杯预测</span></a>
     <button class="nav-toggle" onclick="document.querySelector('.nav-links').classList.toggle('open')">
       <span></span><span></span><span></span>
     </button>
     <ul class="nav-links">
-      <li><a href="index.html">首页</a></li>
-      <li><a href="teams.html">球队中心</a></li>
-      <li><a href="schedule.html">赛程中心</a></li>
-      <li><a href="probability.html">胜率预测</a></li>
-      <li><a href="bracket.html">晋级之路</a></li>
-      <li><a href="vote.html" class="active">冠军投票</a></li>
+      <li><a href="index.html" data-i18n="首页">首页</a></li>
+      <li><a href="teams.html" data-i18n="球队中心">球队中心</a></li>
+      <li><a href="schedule.html" data-i18n="赛程中心">赛程中心</a></li>
+      <li><a href="probability.html" data-i18n="胜率预测">胜率预测</a></li>
+      <li><a href="bracket.html" data-i18n="晋级之路">晋级之路</a></li>
+      <li><a href="vote.html" data-i18n="冠军投票">冠军投票</a></li>
     </ul>
+    <button id="lang-switch" class="btn" style="padding:6px 12px;font-size:13px;font-weight:600;border-radius:6px;margin-left:8px;">EN</button>
   </div>
 </nav>
 
@@ -47,41 +49,41 @@
 
   <!-- 投票区域 -->
   <div id="vote-section">
-    <h1 class="section-title">&#127942; 冠军预测投票</h1>
-    <p class="section-desc">选出你心中的2026世界杯冠军和四强球队，看看有多少人和你眼光一致！</p>
+    <h1 class="section-title" data-i18n="&#127942; 冠军预测投票">&#127942; 冠军预测投票</h1>
+    <p class="section-desc" data-i18n="选出你心中的2026世界杯冠军和四强球队，看看有多少人和你眼光一致！">选出你心中的2026世界杯冠军和四强球队，看看有多少人和你眼光一致！</p>
 
     <div class="chart-wrapper">
-      <h2 class="card-title" style="margin-bottom:8px;">第一步：选择冠军</h2>
+      <h2 class="card-title" data-i18n="第一步：选择冠军">第一步：选择冠军</h2>
       <p class="text-muted mb-16" id="champion-hint">请点击选择一支球队作为冠军</p>
       <div class="vote-grid" id="champion-grid"></div>
     </div>
 
     <div class="chart-wrapper mt-24" id="top4-section" style="opacity:.4;pointer-events:none;">
-      <h2 class="card-title" style="margin-bottom:8px;">第二步：选择四强（不含冠军）</h2>
+      <h2 class="card-title" data-i18n="第二步：选择四强（不含冠军）">第二步：选择四强（不含冠军）</h2>
       <p class="text-muted mb-16" id="top4-hint">再选3支四强球队 · 已选 <span id="top4-count">0</span>/3</p>
       <div class="vote-grid" id="top4-grid"></div>
     </div>
 
     <div class="vote-actions">
-      <button class="btn btn-primary" id="btn-submit" disabled onclick="submitVote()">提交我的预测</button>
-      <button class="btn" onclick="resetVote()" id="btn-reset">重新选择</button>
+      <button class="btn btn-primary" id="btn-submit" disabled onclick="submitVote()"data-i18n="提交我的预测">提交我的预测</button>
+      <button class="btn" onclick="resetVote()" id="btn-reset"data-i18n="重新选择">重新选择</button>
     </div>
   </div>
 
   <!-- 结果区域 -->
   <div id="result-section" class="hidden">
-    <h1 class="section-title">&#128200; 全球投票结果</h1>
+    <h1 class="section-title" data-i18n="&#128200; 全球投票结果">&#128200; 全球投票结果</h1>
     <p class="section-desc" id="result-personal"></p>
 
     <!-- 个人选择 -->
     <div class="chart-wrapper" id="my-picks-wrapper">
-      <h2 class="card-title">我的预测</h2>
+      <h2 class="card-title" data-i18n="我的预测">我的预测</h2>
       <div id="my-picks"></div>
     </div>
 
     <!-- Chart.js 全球投票 -->
     <div class="chart-wrapper mt-24">
-      <h2 class="card-title" style="margin-bottom:16px;">全球网友冠军投票 TOP 10</h2>
+      <h2 class="card-title" data-i18n="全球网友冠军投票 TOP 10">全球网友冠军投票 TOP 10</h2>
       <div style="position:relative;width:100%;height:400px;">
         <canvas id="voteChart" role="img" aria-label="全球冠军投票分布图"></canvas>
       </div>
@@ -89,7 +91,7 @@
 
     <!-- 投票排行表格 -->
     <div class="chart-wrapper mt-24">
-      <h2 class="card-title" style="margin-bottom:16px;">完整排行榜</h2>
+      <h2 class="card-title" data-i18n="完整排行榜">完整排行榜</h2>
       <table class="data-table" id="vote-table"></table>
     </div>
 
@@ -98,7 +100,7 @@
 
     <!-- 分享海报预览 -->
     <div class="chart-wrapper mt-24" id="share-section">
-      <h2 class="card-title" style="margin-bottom:16px;">&#128247; 分享我的预测</h2>
+      <h2 class="card-title" data-i18n="分享我的预测">&#128247; 分享我的预测</h2>
       <div class="share-preview" id="share-poster">
         <div style="font-size:13px;opacity:.6;margin-bottom:8px;">&#9917; 2026世界杯预测</div>
         <div class="share-title">我的夺冠预测</div>
@@ -119,7 +121,7 @@
 </div>
 
 <footer class="footer">
-  <p>2026世界杯预测胜率网站 · <a href="privacy.html">隐私政策</a> · <a href="about.html">关于我们</a></p>
+  <p>2026世界杯预测胜率网站 · <a href="privacy.html"data-i18n="隐私政策">隐私政策</a> · <a href="about.html"data-i18n="关于我们">关于我们</a></p>
 </footer>
 
 <script src="js/data.js"></script>

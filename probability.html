@@ -5,7 +5,7 @@
   <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-3006326176617264"
      crossorigin="anonymous"></script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>胜率预测 | 夺冠概率 · ELO模型 — 2026世界杯预测</title>
+<title data-i18n-title="胜率预测 | 夺冠概率 · ELO模型 — 2026世界杯预测">胜率预测 | 夺冠概率 · ELO模型 — 2026世界杯预测</title>
   <meta name="description" content="基于FIFA排名ELO模型的2026世界杯胜率预测。夺冠概率排行榜Top20，任意两队胜率计算器，12组出线概率分析。">
   <meta name="keywords" content="世界杯胜率预测,夺冠概率,ELO模型,世界杯赔率,小组出线概率">
   <meta name="robots" content="index, follow, max-image-preview:large">
@@ -51,33 +51,35 @@
 .compare-bar-fill.draw { background: var(--text-tertiary); }
 .compare-bar-fill.lose { background: var(--danger); }
 </style>
+  <script src="js/i18n.js" defer></script>
 </head>
 <body>
 
 <nav class="nav">
   <div class="nav-inner">
-    <a href="index.html" class="nav-logo"><span>&#9917;</span> 2026世界杯预测</a>
+    <a href="index.html" class="nav-logo"><span>&#9917;</span> <span data-i18n="2026世界杯预测">2026世界杯预测</span></a>
     <button class="nav-toggle" onclick="document.querySelector('.nav-links').classList.toggle('open')">
       <span></span><span></span><span></span>
     </button>
     <ul class="nav-links">
-      <li><a href="index.html">首页</a></li>
-      <li><a href="teams.html">球队中心</a></li>
-      <li><a href="schedule.html">赛程中心</a></li>
-      <li><a href="probability.html" class="active">胜率预测</a></li>
-      <li><a href="bracket.html">晋级之路</a></li>
-      <li><a href="vote.html">冠军投票</a></li>
+      <li><a href="index.html" data-i18n="首页">首页</a></li>
+      <li><a href="teams.html" data-i18n="球队中心">球队中心</a></li>
+      <li><a href="schedule.html" data-i18n="赛程中心">赛程中心</a></li>
+      <li><a href="probability.html" data-i18n="胜率预测">胜率预测</a></li>
+      <li><a href="bracket.html" data-i18n="晋级之路">晋级之路</a></li>
+      <li><a href="vote.html" data-i18n="冠军投票">冠军投票</a></li>
     </ul>
+    <button id="lang-switch" class="btn" style="padding:6px 12px;font-size:13px;font-weight:600;border-radius:6px;margin-left:8px;">EN</button>
   </div>
 </nav>
 
 <div class="container">
-  <h1 class="section-title">胜率预测</h1>
-  <p class="section-desc">基于FIFA排名差值的ELO模型计算预期胜率，仅供参考</p>
+  <h1 class="section-title" data-i18n="胜率预测">胜率预测</h1>
+  <p class="section-desc" data-i18n="基于FIFA排名差值的ELO模型计算预期胜率，仅供参考">基于FIFA排名差值的ELO模型计算预期胜率，仅供参考</p>
 
   <!-- 夺冠概率排行榜 -->
   <div class="chart-wrapper">
-    <h2 class="card-title" style="margin-bottom:16px;">夺冠概率 Top 20</h2>
+    <h2 class="card-title" data-i18n="夺冠概率 Top 20">夺冠概率 Top 20</h2>
     <div style="position:relative;width:100%;height:640px;">
       <canvas id="champChart" role="img" aria-label="夺冠概率排行榜横向条形图"></canvas>
     </div>
@@ -85,7 +87,7 @@
 
   <!-- 夺冠概率表格 -->
   <div class="chart-wrapper hidden" id="champ-table-wrap">
-    <h2 class="card-title" style="margin-bottom:16px;">完整夺冠概率表 (Top 30)</h2>
+    <h2 class="card-title" data-i18n="完整夺冠概率表 (Top 30)">完整夺冠概率表 (Top 30)</h2>
     <table class="data-table" id="champ-table"></table>
   </div>
 
@@ -95,7 +97,7 @@
 
   <!-- 比赛胜率计算器 -->
   <div class="chart-wrapper mt-24">
-    <h2 class="card-title" style="margin-bottom:16px;">比赛胜率计算器</h2>
+    <h2 class="card-title" data-i18n="比赛胜率计算器">比赛胜率计算器</h2>
     <p class="text-muted mb-16">选择两支球队，查看预期胜率</p>
     <div class="compare-selector" id="matchup-selector"></div>
     <div class="compare-result" id="matchup-result">
@@ -108,14 +110,14 @@
 
   <!-- 小组出线概率 -->
   <div class="chart-wrapper mt-24">
-    <h2 class="card-title" style="margin-bottom:16px;">小组出线概率</h2>
+    <h2 class="card-title" data-i18n="小组出线概率">小组出线概率</h2>
     <div class="group-tabs" id="qual-group-tabs"></div>
     <div id="qual-group-result"></div>
   </div>
 </div>
 
 <footer class="footer">
-  <p>2026世界杯预测胜率网站 · <a href="privacy.html">隐私政策</a> · <a href="about.html">关于我们</a></p>
+  <p>2026世界杯预测胜率网站 · <a href="privacy.html"data-i18n="隐私政策">隐私政策</a> · <a href="about.html"data-i18n="关于我们">关于我们</a></p>
 </footer>
 
 <script src="js/data.js"></script>
