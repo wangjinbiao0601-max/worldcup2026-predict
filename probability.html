@@ -127,13 +127,14 @@
 (function() {
   var odds = getCachedOdds();
   var top20 = odds.slice(0, 20);
+  function tn(t) { return (typeof I18N!=='undefined'&&I18N.current==='en') ? (t.nameEn||t.name) : t.name; }
 
   // Render table (always works)
   function renderTable() {
     var html = '<thead><tr><th>#</th><th>Team</th><th>FIFA</th><th>Group</th><th>Probability</th></tr></thead><tbody>';
     top20.forEach(function(t, i) {
       var rc = i===0?'rank-1':i===1?'rank-2':i===2?'rank-3':'';
-      html += '<tr><td><span class="rank-badge '+rc+'">'+(i+1)+'</span></td><td>'+t.name+'</td><td>#'+t.fifaRank+'</td><td>'+t.group+'</td><td><b>'+t.probability+'%</b></td></tr>';
+      html += '<tr><td><span class="rank-badge '+rc+'">'+(i+1)+'</span></td><td>'+tn(t)+'</td><td>#'+t.fifaRank+'</td><td>'+t.group+'</td><td><b>'+t.probability+'%</b></td></tr>';
     });
     html += '</tbody>';
     document.getElementById('champ-table').innerHTML = html;
@@ -144,7 +145,7 @@
     var canvas = document.getElementById('champChart');
     if (!canvas || typeof Chart === 'undefined') return false;
     if (Chart.getChart(canvas)) Chart.getChart(canvas).destroy();
-    var labels = top20.map(function(t) { return t.name; });
+    var labels = top20.map(function(t) { return tn(t); });
     var data = top20.map(function(t) { return t.probability; });
     var bgColors = top20.map(function(_, i) {
       return i===0?'#fbbf24':i===1?'#94a3b8':i===2?'#d97706':'#3b82f6';

@@ -36,6 +36,7 @@ function calcChampionshipOdds() {
     return {
       id: t.id,
       name: t.nameCN,
+      nameEn: t.name,
       fifaCode: t.fifaCode,
       fifaRank: t.fifaRank,
       group: t.group,
