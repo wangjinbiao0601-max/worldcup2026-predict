@@ -77,105 +77,87 @@
 <script src="js/probability.js"></script>
 <script>
 (function() {
-  function L(text) { return typeof I18N !== 'undefined' ? I18N.t(text) : text; }
   var currentGroup = 'all';
   var searchTerm = '';
-  var isEnglish = false;
 
-  function renderTabs() {
-    isEnglish = typeof I18N !== 'undefined' && I18N.current === 'en';
-    var groups = getAllGroups();
-    var suffix = isEnglish ? ' Gr' : '组';
-    var tabsHTML = '<span class="group-tab active" data-group="all">' + L('全部') + '</span>';
-    groups.forEach(function(g) {
-      tabsHTML += '<span class="group-tab" data-group="' + g + '">' + g + suffix + '</span>';
-    });
-    document.getElementById('group-tabs').innerHTML = tabsHTML;
+  function getGrouper() {
+    if (typeof I18N !== 'undefined' && I18N.current === 'en') return { suffix: ' Gr', teamSuffix: ' teams', groupLabel: ' Group', allLabel: 'All' };
+    return { suffix: '组', teamSuffix: ' 支球队', groupLabel: '组', allLabel: '全部' };
   }
 
-  function getTeamDisplayName(t) {
-    return isEnglish ? t.name : t.nameCN;
+  function teamName(t) {
+    if (typeof I18N !== 'undefined' && I18N.current === 'en') return t.name;
+    return t.nameCN;
   }
 
-  renderTabs();
+  function renderAll() {
+    try {
+      var gr = getGrouper();
+      // Tabs
+      var groups = getAllGroups();
+      var tabsHTML = '<span class="group-tab active" data-group="all">' + gr.allLabel + '</span>';
+      groups.forEach(function(g) { tabsHTML += '<span class="group-tab" data-group="' + g + '">' + g + gr.suffix + '</span>'; });
+      document.getElementById('group-tabs').innerHTML = tabsHTML;
 
+      // Teams
+      var teams = TEAMS;
+      if (currentGroup !== 'all') teams = getTeamsByGroup(currentGroup);
+      if (searchTerm) teams = teams.filter(function(t) {
+        return t.nameCN.toLowerCase().includes(searchTerm) || t.name.toLowerCase().includes(searchTerm) || t.fifaCode.toLowerCase().includes(searchTerm);
+      });
+      document.getElementById('group-summary').textContent = teams.length + gr.teamSuffix + (currentGroup !== 'all' ? ' · ' + currentGroup + gr.groupLabel : '');
+      document.getElementById('team-grid').innerHTML = teams.map(function(t) {
+        return '<div class="team-card" onclick="openTeamModal(\'' + t.fifaCode + '\')">' +
+          '<img src="' + t.flag + '" alt=""><div class="team-card-info"><div class="team-card-name">' + teamName(t) + '</div>' +
+          '<div class="team-card-rank">FIFA #' + t.fifaRank + '</div></div><span class="team-card-group">' + t.group + gr.suffix + '</span></div>';
+      }).join('');
+    } catch(e) { console.error('Render error:', e); }
+  }
+
+  // Run once
+  renderAll();
+
+  // Events
   document.getElementById('group-tabs').addEventListener('click', function(e) {
     if (e.target.classList.contains('group-tab')) {
       document.querySelectorAll('.group-tab').forEach(function(t) { t.classList.remove('active'); });
       e.target.classList.add('active');
       currentGroup = e.target.dataset.group;
-      renderTeams();
+      renderAll();
     }
   });
-
   document.getElementById('team-search').addEventListener('input', function(e) {
     searchTerm = e.target.value.toLowerCase();
-    renderTeams();
+    renderAll();
   });
 
-  function renderTeams() {
-    isEnglish = typeof I18N !== 'undefined' && I18N.current === 'en';
-    var teams = TEAMS;
-    if (currentGroup !== 'all') teams = getTeamsByGroup(currentGroup);
-    if (searchTerm) {
-      teams = teams.filter(function(t) {
-        return t.nameCN.toLowerCase().includes(searchTerm) || t.name.toLowerCase().includes(searchTerm) || t.fifaCode.toLowerCase().includes(searchTerm);
-      });
-    }
-    var groupWord = isEnglish ? ' Group' : '组';
-    var teamWord = isEnglish ? ' teams' : ' 支球队';
-    document.getElementById('group-summary').textContent =
-      (isEnglish ? '' : '') + teams.length + teamWord + (currentGroup !== 'all' ? ' · ' + currentGroup + groupWord : '');
-
-    document.getElementById('team-grid').innerHTML = teams.map(function(t) {
-      return '<div class="team-card" onclick="openTeamModal(\'' + t.fifaCode + '\')">' +
-        '<img src="' + t.flag + '" alt="">' +
-        '<div class="team-card-info">' +
-          '<div class="team-card-name">' + getTeamDisplayName(t) + '</div>' +
-          '<div class="team-card-rank">FIFA #' + t.fifaRank + '</div>' +
-        '</div>' +
-        '<span class="team-card-group">' + t.group + groupWord + '</span>' +
-      '</div>';
-    }).join('');
-  }
-
-  renderTeams();
-
+  // Modal
   window.openTeamModal = function(code) {
     var t = getTeamByCode(code);
     if (!t) return;
     document.getElementById('modal-flag').src = t.flag;
-    document.getElementById('modal-name').textContent = getTeamDisplayName(t);
+    document.getElementById('modal-name').textContent = teamName(t);
     document.getElementById('modal-name-en').textContent = t.name + ' (' + t.fifaCode + ')';
-
     var odds = getCachedOdds().find(function(o) { return o.fifaCode === code; });
     var champRank = odds ? getCachedOdds().indexOf(odds) + 1 : '-';
-
-    var groupProbs = calcGroupQualification(t.group);
-    var myProb = groupProbs.find(function(p) { return p.id === t.id; });
-    var qualifyProb = myProb ? myProb.qualifyProb + '%' : '-';
-
+    var gr = getGrouper();
+    var gp = calcGroupQualification(t.group);
+    var mp = gp.find(function(p) { return p.id === t.id; });
     document.getElementById('modal-stats').innerHTML =
-      '<div class="modal-stat"><div class="modal-stat-val">#' + t.fifaRank + '</div><div class="modal-stat-label">' + L('FIFA排名') + '</div></div>' +
-      '<div class="modal-stat"><div class="modal-stat-val">' + t.group + (isEnglish ? ' Group' : '组') + '</div><div class="modal-stat-label">' + L('分组') + '</div></div>' +
-      '<div class="modal-stat"><div class="modal-stat-val">' + champRank + '</div><div class="modal-stat-label">' + L('夺冠热门排名') + '</div></div>' +
-      '<div class="modal-stat"><div class="modal-stat-val">' + qualifyProb + '</div><div class="modal-stat-label">' + L('小组出线概率') + '</div></div>';
-
+      '<div class="modal-stat"><div class="modal-stat-val">#' + t.fifaRank + '</div><div class="modal-stat-label">FIFA Rank</div></div>' +
+      '<div class="modal-stat"><div class="modal-stat-val">' + t.group + gr.groupLabel + '</div><div class="modal-stat-label">Group</div></div>' +
+      '<div class="modal-stat"><div class="modal-stat-val">' + champRank + '</div><div class="modal-stat-label">Champ Rank</div></div>' +
+      '<div class="modal-stat"><div class="modal-stat-val">' + (mp ? mp.qualifyProb + '%' : '-') + '</div><div class="modal-stat-label">Qualify %</div></div>';
     document.getElementById('modal-schedule-link').href = 'schedule.html?team=' + t.fifaCode;
     document.getElementById('team-modal').classList.add('open');
   };
-
   window.closeModal = function() { document.getElementById('team-modal').classList.remove('open'); };
   document.getElementById('team-modal').addEventListener('click', function(e) { if (e.target === this) closeModal(); });
 
   var params = new URLSearchParams(window.location.search);
-  var teamCode = params.get('team');
-  if (teamCode) { openTeamModal(teamCode); }
+  if (params.get('team')) { openTeamModal(params.get('team')); }
 
-  window.renderLang = function() {
-    renderTabs();
-    renderTeams();
-  };
+  window.renderLang = function() { renderAll(); };
 })();
 </script>
 </body>
