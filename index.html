@@ -152,6 +152,7 @@
   }
 
   function renderToday() {
+    var isEnglish = typeof I18N !== 'undefined' && I18N.current === 'en';
     var today = new Date().toISOString().slice(0, 10);
     var todayMatches = getMatchesByDate(today);
     var todayHTML = '';
@@ -160,7 +161,9 @@
       if (upcoming) {
         var h = getTeamByCode(upcoming.home);
         var a = getTeamByCode(upcoming.away);
-        todayHTML = '<div class="card text-center" style="padding:40px;"><p class="text-muted" style="font-size:15px;">' + L('今日暂无比赛') + '</p><p style="margin-top:8px;font-size:13px;">' + L('最近比赛') + ': ' + h.nameCN + ' vs ' + a.nameCN + ' — ' + upcoming.date + '</p></div>';
+        var hName = isEnglish ? (h ? h.name : '') : (h ? h.nameCN : '');
+        var aName = isEnglish ? (a ? a.name : '') : (a ? a.nameCN : '');
+        todayHTML = '<div class="card text-center" style="padding:40px;"><p class="text-muted" style="font-size:15px;">' + L('今日暂无比赛') + '</p><p style="margin-top:8px;font-size:13px;">' + L('最近比赛') + ': ' + hName + ' vs ' + aName + ' — ' + upcoming.date + '</p></div>';
       } else {
         todayHTML = '<div class="card text-center" style="padding:40px;"><p class="text-muted">' + L('赛事尚未开始') + '</p></div>';
       }
@@ -169,14 +172,16 @@
         var h = getTeamByCode(m.home);
         var a = getTeamByCode(m.away);
         var probs = calcMatchProbability(h, a);
+        var homeName = isEnglish ? (h ? h.name : 'TBD') : (h ? h.nameCN : '待定');
+        var awayName = isEnglish ? (a ? a.name : 'TBD') : (a ? a.nameCN : '待定');
         var stageLabels = {group: m.group + L('组') + ' ' + L('第') + m.matchday + ' ' + L('轮'), round32: L('32强'), round16: L('16强'), quarter: L('8强'), semi: L('半决赛'), thirdPlace: L('季军赛'), final: L('决赛')};
         var stageLabel = stageLabels[m.stage] || m.stage;
         return '<div class="match-card">' +
           '<div class="match-time"><div class="match-date">' + m.date.slice(5) + '</div><div class="match-hour">' + m.time + '</div></div>' +
           '<div class="match-teams">' +
-            '<div class="match-team"><img src="' + h.flag + '" alt=""><span class="match-team-name">' + h.nameCN + '</span></div>' +
+            '<div class="match-team"><img src="' + h.flag + '" alt=""><span class="match-team-name">' + homeName + '</span></div>' +
             '<span class="match-vs">VS</span>' +
-            '<div class="match-team right"><span class="match-team-name">' + a.nameCN + '</span><img src="' + a.flag + '" alt=""></div>' +
+            '<div class="match-team right"><span class="match-team-name">' + awayName + '</span><img src="' + a.flag + '" alt=""></div>' +
           '</div>' +
           '<span class="match-stage">' + stageLabel + '</span>' +
           '<div style="text-align:center;font-size:12px;min-width:80px;">' +
