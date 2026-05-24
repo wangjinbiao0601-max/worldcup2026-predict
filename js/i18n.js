@@ -129,7 +129,20 @@ const I18N = {
     '2026世界杯预测胜率网站 · 球队数据基于官方分组': 'WC 2026 Predict · Team data from official grouping',
     '2026世界杯预测胜率网站 · 赛程基于官方安排 · 时间均为北京时间 (UTC+8)': 'WC 2026 Predict · Official schedule · Beijing Time (UTC+8)',
 
-    // 通用
+    // 投票（补充）
+    '第一步：选择冠军': 'Step 1: Pick Champion',
+    '第二步：选择四强（不含冠军）': 'Step 2: Semi-finalists',
+    '再选3支四强球队 · 已选': 'Pick 3 more · Selected',
+    '请点击选择一支球队作为冠军': 'Click a team to pick as champion',
+    '全球投票结果': 'Global Vote Results',
+    '你选择的冠军': 'Your champion',
+    '在全球投票中排名': 'ranks',
+    '人投票': 'votes',
+    '我的夺冠预测': 'My Championship Prediction',
+    '2026世界杯预测胜率网站 · 6月12日开幕': 'WC 2026 Predict · Jun 12 Opening',
+    '选择球队A': 'Select Team A',
+    '长按或右键保存海报图片，分享到朋友圈！': 'Long press to save & share poster!',
+    '再选3支四强球队': 'Pick 3 semi-finalists',
     '天': 'D',
     '时': 'H',
     '分': 'M',

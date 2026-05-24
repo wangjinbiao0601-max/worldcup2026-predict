@@ -125,6 +125,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
 <script>
 (function() {
+  function L(text) { return typeof I18N !== 'undefined' ? I18N.t(text) : text; }
   var odds = getCachedOdds();
 
   // 夺冠概率排行榜 (Chart.js 横向条形图)
@@ -174,7 +175,7 @@
   });
 
   // 夺冠概率表格
-  var tableHTML = '<thead><tr><th>排名</th><th>球队</th><th>FIFA排名</th><th>分组</th><th>夺冠概率</th><th>概率条</th></tr></thead><tbody>';
+  var tableHTML = '<thead><tr><th data-i18n="排名">排名</th><th data-i18n="球队">球队</th><th>FIFA Rank</th><th data-i18n="分组">分组</th><th data-i18n="夺冠概率">夺冠概率</th><th data-i18n="概率条">概率条</th></tr></thead><tbody>';
   odds.slice(0, 30).forEach(function(t, i) {
     var rankClass = i === 0 ? 'rank-1' : i === 1 ? 'rank-2' : i === 2 ? 'rank-3' : '';
     tableHTML += '<tr>' +
@@ -195,16 +196,16 @@
     showChart = !showChart;
     document.getElementById('champChart').parentElement.parentElement.classList.toggle('hidden', !showChart);
     document.getElementById('champ-table-wrap').classList.toggle('hidden', showChart);
-    document.getElementById('table-toggle').textContent = showChart ? '切换为表格视图' : '切换为图表视图';
+    document.getElementById('table-toggle').textContent = showChart ? L("切换为表格视图") : L("切换为图表视图");
   };
 
   // 比赛胜率计算器
-  var selectorHTML = '<select id="select-team-a" onchange="updateMatchup()"><option value="">-- 选择球队A --</option>';
+  var selectorHTML = '<select id="select-team-a" onchange="updateMatchup()"><option value="">-- <span data-i18n="选择球队A">选择球队A</span> --</option>';
   TEAMS.forEach(function(t) {
     selectorHTML += '<option value="' + t.fifaCode + '">' + t.nameCN + ' (' + t.fifaCode + ') #' + t.fifaRank + '</option>';
   });
   selectorHTML += '</select>';
-  selectorHTML += '<select id="select-team-b" onchange="updateMatchup()"><option value="">-- 选择球队B --</option>';
+  selectorHTML += '<select id="select-team-b" onchange="updateMatchup()"><option value="">-- <span data-i18n="选择球队B">选择球队B</span> --</option>';
   TEAMS.forEach(function(t) {
     selectorHTML += '<option value="' + t.fifaCode + '">' + t.nameCN + ' (' + t.fifaCode + ') #' + t.fifaRank + '</option>';
   });
@@ -215,8 +216,8 @@
     var codeA = document.getElementById('select-team-a').value;
     var codeB = document.getElementById('select-team-b').value;
     if (!codeA || !codeB || codeA === codeB) {
-      document.getElementById('team-a-display').innerHTML = '<p class="text-muted">' + (codeA ? getTeamByCode(codeA).nameCN : '选择球队A') + '</p>';
-      document.getElementById('team-b-display').innerHTML = '<p class="text-muted">' + (codeB ? getTeamByCode(codeB).nameCN : '选择球队B') + '</p>';
+      document.getElementById('team-a-display').innerHTML = '<p class="text-muted">' + (codeA ? getTeamByCode(codeA).nameCN : L("选择球队A")) + '</p>';
+      document.getElementById('team-b-display').innerHTML = '<p class="text-muted">' + (codeB ? getTeamByCode(codeB).nameCN : L("选择球队B")) + '</p>';
       document.getElementById('matchup-bars').innerHTML = '';
       return;
     }
@@ -238,13 +239,13 @@
   var groups = getAllGroups();
   var qualTabsHTML = '';
   groups.forEach(function(g, i) {
-    qualTabsHTML += '<span class="group-tab' + (i === 0 ? ' active' : '') + '" data-group="' + g + '">' + g + '组</span>';
+    qualTabsHTML += '<span class="group-tab' + (i === 0 ? ' active' : '') + '" data-group="' + g + '">' + g + L('组')</span>';
   });
   document.getElementById('qual-group-tabs').innerHTML = qualTabsHTML;
 
   function renderQualGroup(group) {
     var probs = calcGroupQualification(group);
-    var html = '<table class="data-table"><thead><tr><th>排名</th><th>球队</th><th>FIFA排名</th><th>出线概率</th><th>概率条</th></tr></thead><tbody>';
+    var html = '<table class="data-table"><thead><tr><th data-i18n="排名">排名</th><th data-i18n="球队">球队</th><th>FIFA Rank</th><th>出线概率</th><th data-i18n="概率条">概率条</th></tr></thead><tbody>';
     probs.forEach(function(p, i) {
       html += '<tr>' +
         '<td>' + (i+1) + '</td>' +

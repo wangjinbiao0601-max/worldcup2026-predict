@@ -54,13 +54,13 @@
 
     <div class="chart-wrapper">
       <h2 class="card-title" data-i18n="第一步：选择冠军">第一步：选择冠军</h2>
-      <p class="text-muted mb-16" id="champion-hint">请点击选择一支球队作为冠军</p>
+      <p class="text-muted mb-16" id="champion-hint"><span data-i18n="请点击选择一支球队作为冠军">请点击选择一支球队作为冠军</span></p>
       <div class="vote-grid" id="champion-grid"></div>
     </div>
 
     <div class="chart-wrapper mt-24" id="top4-section" style="opacity:.4;pointer-events:none;">
       <h2 class="card-title" data-i18n="第二步：选择四强（不含冠军）">第二步：选择四强（不含冠军）</h2>
-      <p class="text-muted mb-16" id="top4-hint">再选3支四强球队 · 已选 <span id="top4-count">0</span>/3</p>
+      <p class="text-muted mb-16" id="top4-hint"><span data-i18n="再选3支四强球队 · 已选">再选3支四强球队 · 已选</span> <span id="top4-count">0</span>/3</p>
       <div class="vote-grid" id="top4-grid"></div>
     </div>
 
@@ -102,19 +102,19 @@
     <div class="chart-wrapper mt-24" id="share-section">
       <h2 class="card-title" data-i18n="分享我的预测">&#128247; 分享我的预测</h2>
       <div class="share-preview" id="share-poster">
-        <div style="font-size:13px;opacity:.6;margin-bottom:8px;">&#9917; 2026世界杯预测</div>
-        <div class="share-title">我的夺冠预测</div>
+        <div style="font-size:13px;opacity:.6;margin-bottom:8px;"><span data-i18n="2026世界杯预测">2026世界杯预测</span></div>
+        <div class="share-title"><span data-i18n="我的夺冠预测">我的夺冠预测</span></div>
         <div class="share-champion" id="share-champion"></div>
         <div class="share-teams" id="share-teams"></div>
-        <div class="share-footer">2026世界杯预测胜率网站 · 6月12日开幕</div>
+        <div class="share-footer"><span data-i18n="2026世界杯预测胜率网站 · 6月12日开幕">2026世界杯预测胜率网站 · 6月12日开幕</span></div>
       </div>
       <div class="text-center mt-16">
-        <button class="btn btn-success" onclick="sharePoster()">&#128247; 截图分享到朋友圈</button>
+        <button class="btn btn-success" onclick="sharePoster()">&#128247; <span data-i18n="截图分享到朋友圈">截图分享到朋友圈</span></button>
       </div>
     </div>
 
     <div class="text-center mt-24">
-      <button class="btn" onclick="resetVote()">&#128260; 重新投票</button>
+      <button class="btn" onclick="resetVote()" data-i18n="重新投票">&#128260; 重新投票</button>
     </div>
   </div>
 
@@ -129,6 +129,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
 <script>
 (function() {
+  function L(text) { return typeof I18N !== 'undefined' ? I18N.t(text) : text; }
   var selectedChampion = null;
   var selectedTop4 = [];
 
@@ -233,7 +234,7 @@
 
     // 个人选择展示
     var picksHTML = '<div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;justify-content:center;">' +
-      '<span class="result-badge highlight">&#127942; 冠军: ' + champ.nameCN + '</span>';
+      '<span class="result-badge highlight">&#127942; ' + L('冠军') + ': ' + champ.nameCN + '</span>';
     top4Teams.forEach(function(t) {
       picksHTML += '<span class="result-badge">' + t.nameCN + '</span>';
     });
@@ -249,9 +250,10 @@
     });
     var pctUsers = totalVotes > 0 ? Math.round((1 - champRank / globalVotes.teams.length) * 100) : 50;
 
-    document.getElementById('result-personal').innerHTML =
-      '你选择的冠军 <strong>' + champ.nameCN + '</strong> 在全球投票中排名 <strong>#' + champRank + '</strong>，' +
-      '共 <strong>' + userCount.toLocaleString() + '</strong> 人投票。';
+    var champName = champ.nameCN;
+      document.getElementById('result-personal').innerHTML =
+      '你选择的冠军 <strong>' + champ.nameCN + '</strong> <span data-i18n="在全球投票中排名">在全球投票中排名</span> <strong>#' + champRank + '</strong>，' +
+      '共 <strong>' + userCount.toLocaleString() + '</strong> <span data-i18n="人投票">人投票</span>。';
 
     // Chart.js
     var top10 = globalVotes.teams.slice(0, 10);
@@ -314,8 +316,8 @@
     // 彩蛋
     document.getElementById('easter-egg').innerHTML =
       '<div style="font-size:40px;margin-bottom:8px;">&#127881;</div>' +
-      '<p style="font-size:18px;font-weight:600;">你的眼光战胜了 <span style="color:var(--accent);font-size:22px;">' + pctUsers + '%</span> 的网友！</p>' +
-      '<p class="text-muted" style="margin-top:4px;">全球共 <strong>' + totalVotes.toLocaleString() + '</strong> 人参与投票</p>';
+      '<p style="font-size:18px;font-weight:600;">' + L('你的眼光战胜了') + ' <span style="color:var(--accent);font-size:22px;">' + pctUsers + '%</span> ' + L('的网友！') + '</p>' +
+      '<p class="text-muted" style="margin-top:4px;">' + L('全球共') + ' <strong>' + totalVotes.toLocaleString() + '</strong> ' + L('人参与投票') + '</p>';
 
     // 分享海报
     document.getElementById('share-champion').textContent = champ.nameCN;
@@ -347,8 +349,20 @@
   }
 
   window.sharePoster = function() {
-    alert('长按或右键保存海报图片，分享到朋友圈！\n\n也可以使用浏览器截图工具(Ctrl+Shift+S)截取下方海报区域。');
+    alert(L('长按或右键保存海报图片，分享到朋友圈！\n\n也可以使用浏览器截图工具(Ctrl+Shift+S)截取下方海报区域。'));
     document.getElementById('share-section').scrollIntoView({ behavior: 'smooth' });
+  };
+
+  window.renderLang = function() {
+    var sv = null;
+    try { sv = JSON.parse(localStorage.getItem('wc2026_vote')); } catch(e) {}
+    if (sv) { showResults(sv); }
+    else {
+      document.getElementById('champion-hint').textContent = L('请点击选择一支球队作为冠军');
+      document.getElementById('btn-submit').textContent = L('提交我的预测');
+      document.getElementById('btn-reset').textContent = L('重新选择');
+      document.getElementById('top4-hint').innerHTML = L('再选3支四强球队') + ' · ' + L('已选') + ' <span id="top4-count">' + selectedTop4.length + '</span>/3';
+    }
   };
 })();
 </script>
