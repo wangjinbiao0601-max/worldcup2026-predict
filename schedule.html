@@ -71,6 +71,8 @@
   var currentStage = 'all';
   var currentGroup = 'all';
 
+  function tn(t) { return (typeof I18N !== 'undefined' && I18N.current === 'en') ? t.name : t.nameCN; }
+
   function renderFilters() {
     var stages = [
       { id: 'all', label: L('全部比赛') },
@@ -166,9 +168,9 @@
         };
         var stageLabel = stageLabels[m.stage] || m.stage;
 
-        var homeHTML = h ? '<div class="match-team"><img src="' + h.flag + '" alt=""><span class="match-team-name">' + h.nameCN + '</span></div>'
+        var homeHTML = h ? '<div class="match-team"><img src="' + h.flag + '" alt=""><span class="match-team-name">' + tn(h) + '</span></div>'
           : '<div class="match-team"><span class="match-team-name" style="color:var(--text-tertiary);">' + tbd + '</span></div>';
-        var awayHTML = a ? '<div class="match-team right"><span class="match-team-name">' + a.nameCN + '</span><img src="' + a.flag + '" alt=""></div>'
+        var awayHTML = a ? '<div class="match-team right"><span class="match-team-name">' + tn(a) + '</span><img src="' + a.flag + '" alt=""></div>'
           : '<div class="match-team right"><span class="match-team-name" style="color:var(--text-tertiary);">' + tbd + '</span></div>';
         var scoreHTML = m.score ? '<div class="match-score">' + m.score + '</div>' : '<div class="match-score scheduled">VS</div>';
         var probHTML = '';
@@ -192,7 +194,7 @@
   if (teamCode) {
     var team = getTeamByCode(teamCode);
     if (team) {
-      document.querySelector('.section-desc').textContent = team.nameCN + ' (' + team.fifaCode + ') ' + L('的赛程');
+      document.querySelector('.section-desc').textContent = tn(team) + ' (' + team.fifaCode + ') ' + L('的赛程');
       var teamMatches = MATCHES.filter(function(m) { return m.home === teamCode || m.away === teamCode; });
       document.getElementById('match-count').textContent = L('共') + ' ' + teamMatches.length + ' ' + L('场比赛');
       var groupWord = L('组');
@@ -206,8 +208,8 @@
           var h = getTeamByCode(m.home); var a = getTeamByCode(m.away);
           var labels = {group: m.group+groupWord+' M'+m.matchday, round32: L('32强'), round16: L('16强'), quarter: L('8强'), semi: L('半决赛'), thirdPlace: L('季军赛'), final: L('决赛')};
           html += '<div class="match-card"><div class="match-time"><div class="match-date">' + m.date.slice(5) + '</div><div class="match-hour">' + m.time + '</div></div>' +
-            '<div class="match-teams"><div class="match-team"><img src="' + (h?h.flag:'') + '" alt=""><span class="match-team-name">' + (h?h.nameCN:tbd) + '</span></div>' +
-            '<span class="match-vs">VS</span><div class="match-team right"><span class="match-team-name">' + (a?a.nameCN:tbd) + '</span><img src="' + (a?a.flag:'') + '" alt=""></div></div>' +
+            '<div class="match-teams"><div class="match-team"><img src="' + (h?h.flag:'') + '" alt=""><span class="match-team-name">' + (h?tn(h):tbd) + '</span></div>' +
+            '<span class="match-vs">VS</span><div class="match-team right"><span class="match-team-name">' + (a?tn(a):tbd) + '</span><img src="' + (a?a.flag:'') + '" alt=""></div></div>' +
             '<span class="match-stage">' + (labels[m.stage]||m.stage) + '</span><div class="match-venue">' + m.city + '</div></div>';
         });
       });
