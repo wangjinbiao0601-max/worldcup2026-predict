@@ -21,14 +21,18 @@ function calcMatchProbability(teamA, teamB) {
 }
 
 // ============ 夺冠概率计算 ============
+// 使用平方加权：排名越高（数字越小），权重指数增长
+// 公式: P = (maxRank - rank + 1)^2 / 总权重 × 100
 function calcChampionshipOdds() {
   var maxRank = TEAMS.reduce(function(max, t) { return Math.max(max, t.fifaRank); }, 0);
   var totalScore = TEAMS.reduce(function(sum, t) {
-    return sum + (maxRank - t.fifaRank + 1);
+    var score = maxRank - t.fifaRank + 1;
+    return sum + score * score;  // 平方加权，拉大强弱差距
   }, 0);
 
   return TEAMS.map(function(t) {
-    var raw = (maxRank - t.fifaRank + 1) / totalScore * 100;
+    var score = maxRank - t.fifaRank + 1;
+    var raw = (score * score) / totalScore * 100;
     return {
       id: t.id,
       name: t.nameCN,
