@@ -208,6 +208,12 @@ const I18N = {
 
   applyAll: function() {
     var self = this;
+    // Handle placeholder-only elements (search boxes, etc.)
+    document.querySelectorAll('[data-i18n-placeholder]').forEach(function(el) {
+      if (el.placeholder) {
+        el.placeholder = self.t(el.getAttribute('data-i18n-placeholder'));
+      }
+    });
     // Update data-i18n elements
     document.querySelectorAll('[data-i18n]').forEach(function(el) {
       var key = el.getAttribute('data-i18n');

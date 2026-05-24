@@ -80,15 +80,23 @@
   function L(text) { return typeof I18N !== 'undefined' ? I18N.t(text) : text; }
   var currentGroup = 'all';
   var searchTerm = '';
+  var isEnglish = false;
 
   function renderTabs() {
+    isEnglish = typeof I18N !== 'undefined' && I18N.current === 'en';
     var groups = getAllGroups();
+    var suffix = isEnglish ? ' Gr' : '组';
     var tabsHTML = '<span class="group-tab active" data-group="all">' + L('全部') + '</span>';
     groups.forEach(function(g) {
-      tabsHTML += '<span class="group-tab" data-group="' + g + '">' + g + L('组') + '</span>';
+      tabsHTML += '<span class="group-tab" data-group="' + g + '">' + g + suffix + '</span>';
     });
     document.getElementById('group-tabs').innerHTML = tabsHTML;
   }
+
+  function getTeamDisplayName(t) {
+    return isEnglish ? t.name : t.nameCN;
+  }
+
   renderTabs();
 
   document.getElementById('group-tabs').addEventListener('click', function(e) {
@@ -106,6 +114,7 @@
   });
 
   function renderTeams() {
+    isEnglish = typeof I18N !== 'undefined' && I18N.current === 'en';
     var teams = TEAMS;
     if (currentGroup !== 'all') teams = getTeamsByGroup(currentGroup);
     if (searchTerm) {
@@ -113,16 +122,16 @@
         return t.nameCN.toLowerCase().includes(searchTerm) || t.name.toLowerCase().includes(searchTerm) || t.fifaCode.toLowerCase().includes(searchTerm);
       });
     }
-    var groupWord = L('组');
-    var teamWord = L('支球队');
+    var groupWord = isEnglish ? ' Group' : '组';
+    var teamWord = isEnglish ? ' teams' : ' 支球队';
     document.getElementById('group-summary').textContent =
-      L('共') + ' ' + teams.length + ' ' + teamWord + (currentGroup !== 'all' ? ' · ' + currentGroup + groupWord : '');
+      (isEnglish ? '' : '') + teams.length + teamWord + (currentGroup !== 'all' ? ' · ' + currentGroup + groupWord : '');
 
     document.getElementById('team-grid').innerHTML = teams.map(function(t) {
       return '<div class="team-card" onclick="openTeamModal(\'' + t.fifaCode + '\')">' +
         '<img src="' + t.flag + '" alt="">' +
         '<div class="team-card-info">' +
-          '<div class="team-card-name">' + t.nameCN + '</div>' +
+          '<div class="team-card-name">' + getTeamDisplayName(t) + '</div>' +
           '<div class="team-card-rank">FIFA #' + t.fifaRank + '</div>' +
         '</div>' +
         '<span class="team-card-group">' + t.group + groupWord + '</span>' +
@@ -136,11 +145,10 @@
     var t = getTeamByCode(code);
     if (!t) return;
     document.getElementById('modal-flag').src = t.flag;
-    document.getElementById('modal-name').textContent = t.nameCN;
+    document.getElementById('modal-name').textContent = getTeamDisplayName(t);
     document.getElementById('modal-name-en').textContent = t.name + ' (' + t.fifaCode + ')';
 
     var odds = getCachedOdds().find(function(o) { return o.fifaCode === code; });
-    var champProb = odds ? odds.probability : '-';
     var champRank = odds ? getCachedOdds().indexOf(odds) + 1 : '-';
 
     var groupProbs = calcGroupQualification(t.group);
@@ -149,7 +157,7 @@
 
     document.getElementById('modal-stats').innerHTML =
       '<div class="modal-stat"><div class="modal-stat-val">#' + t.fifaRank + '</div><div class="modal-stat-label">' + L('FIFA排名') + '</div></div>' +
-      '<div class="modal-stat"><div class="modal-stat-val">' + t.group + L('组') + '</div><div class="modal-stat-label">' + L('分组') + '</div></div>' +
+      '<div class="modal-stat"><div class="modal-stat-val">' + t.group + (isEnglish ? ' Group' : '组') + '</div><div class="modal-stat-label">' + L('分组') + '</div></div>' +
       '<div class="modal-stat"><div class="modal-stat-val">' + champRank + '</div><div class="modal-stat-label">' + L('夺冠热门排名') + '</div></div>' +
       '<div class="modal-stat"><div class="modal-stat-val">' + qualifyProb + '</div><div class="modal-stat-label">' + L('小组出线概率') + '</div></div>';
 
