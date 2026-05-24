@@ -125,149 +125,98 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
 <script>
 (function() {
-  function L(text) { return typeof I18N !== 'undefined' ? I18N.t(text) : text; }
   var odds = getCachedOdds();
-
-  // 夺冠概率排行榜 (Chart.js 横向条形图)
   var top20 = odds.slice(0, 20);
-  var labels = top20.map(function(t) { return t.name; });
-  var data = top20.map(function(t) { return t.probability; });
-  var bgColors = top20.map(function(_, i) {
-    return i === 0 ? '#fbbf24' : i === 1 ? '#94a3b8' : i === 2 ? '#d97706' : '#3b82f6';
-  });
 
-  var isDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-  new Chart(document.getElementById('champChart'), {
-    type: 'bar',
-    data: {
-      labels: labels,
-      datasets: [{
-        label: '夺冠概率 (%)',
-        data: data,
-        backgroundColor: bgColors,
-        borderRadius: 4,
-      }]
-    },
-    options: {
-      indexAxis: 'y',
-      responsive: true,
-      maintainAspectRatio: false,
-      plugins: {
-        legend: { display: false },
-        tooltip: {
-          callbacks: {
-            label: function(ctx) { return '夺冠概率: ' + ctx.raw + '%'; }
-          }
-        }
-      },
-      scales: {
-        x: {
-          title: { display: true, text: '夺冠概率 (%)', color: isDark ? '#94a3b8' : '#6c757d' },
-          ticks: { callback: function(v) { return v + '%'; }, color: isDark ? '#94a3b8' : '#6c757d' },
-          grid: { color: isDark ? 'rgba(255,255,255,.06)' : 'rgba(0,0,0,.06)' }
-        },
-        y: {
-          ticks: { color: isDark ? '#94a3b8' : '#6c757d' },
-          grid: { display: false }
+  // Render table (always works)
+  function renderTable() {
+    var html = '<thead><tr><th>#</th><th>Team</th><th>FIFA</th><th>Group</th><th>Probability</th></tr></thead><tbody>';
+    top20.forEach(function(t, i) {
+      var rc = i===0?'rank-1':i===1?'rank-2':i===2?'rank-3':'';
+      html += '<tr><td><span class="rank-badge '+rc+'">'+(i+1)+'</span></td><td>'+t.name+'</td><td>#'+t.fifaRank+'</td><td>'+t.group+'</td><td><b>'+t.probability+'%</b></td></tr>';
+    });
+    html += '</tbody>';
+    document.getElementById('champ-table').innerHTML = html;
+  }
+
+  // Render chart (needs Chart.js)
+  function renderChart() {
+    var canvas = document.getElementById('champChart');
+    if (!canvas || typeof Chart === 'undefined') return false;
+    if (Chart.getChart(canvas)) Chart.getChart(canvas).destroy();
+    var labels = top20.map(function(t) { return t.name; });
+    var data = top20.map(function(t) { return t.probability; });
+    var bgColors = top20.map(function(_, i) {
+      return i===0?'#fbbf24':i===1?'#94a3b8':i===2?'#d97706':'#3b82f6';
+    });
+    var isDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+    new Chart(canvas, {
+      type: 'bar', data: { labels: labels, datasets: [{ label: 'Win %', data: data, backgroundColor: bgColors, borderRadius: 4 }] },
+      options: { indexAxis: 'y', responsive: true, maintainAspectRatio: false,
+        plugins: { legend: { display: false } },
+        scales: {
+          x: { ticks: { callback: function(v) { return v+'%'; }, color: isDark?'#94a3b8':'#6c757d' }, grid: { color: isDark?'rgba(255,255,255,.06)':'rgba(0,0,0,.06)' } },
+          y: { ticks: { color: isDark?'#94a3b8':'#6c757d' }, grid: { display: false } }
         }
       }
-    }
-  });
+    });
+    return true;
+  }
 
-  // 夺冠概率表格
-  var tableHTML = '<thead><tr><th data-i18n="排名">排名</th><th data-i18n="球队">球队</th><th>FIFA Rank</th><th data-i18n="分组">分组</th><th data-i18n="夺冠概率">夺冠概率</th><th data-i18n="概率条">概率条</th></tr></thead><tbody>';
-  odds.slice(0, 30).forEach(function(t, i) {
-    var rankClass = i === 0 ? 'rank-1' : i === 1 ? 'rank-2' : i === 2 ? 'rank-3' : '';
-    tableHTML += '<tr>' +
-      '<td><span class="rank-badge ' + rankClass + '">' + (i+1) + '</span></td>' +
-      '<td><div class="prob-cell"><img class="prob-flag" src="' + t.flag + '" alt=""><span>' + t.name + '</span></div></td>' +
-      '<td>#' + t.fifaRank + '</td>' +
-      '<td>' + t.group + '组</td>' +
-      '<td style="font-weight:600;">' + t.probability + '%</td>' +
-      '<td><div class="prob-bar-bg"><div class="prob-bar" style="width:' + Math.min(t.probability * 3, 100) + '%"></div></div></td>' +
-    '</tr>';
-  });
-  tableHTML += '</tbody>';
-  document.getElementById('champ-table').innerHTML = tableHTML;
+  // Try chart first, fall back to table
+  if (!renderChart()) { document.getElementById('champChart').parentElement.style.display = 'none'; }
+  renderTable();
 
-  // 切换视图
-  var showChart = true;
-  window.toggleTableView = function() {
-    showChart = !showChart;
-    document.getElementById('champChart').parentElement.parentElement.classList.toggle('hidden', !showChart);
-    document.getElementById('champ-table-wrap').classList.toggle('hidden', showChart);
-    document.getElementById('table-toggle').textContent = showChart ? L("切换为表格视图") : L("切换为图表视图");
-  };
+  // ===== 比赛胜率计算器 (simplified) =====
+  function renderMatchup() {
+    var teams = TEAMS.slice().sort(function(a,b){ return a.fifaRank-b.fifaRank; });
+    var html = '<select id="teamA" onchange="calcMatchup()"><option value="">'+(typeof L!=='undefined'?L('选择球队A'):'选择球队A')+'</option>';
+    teams.forEach(function(t){ html+='<option value="'+t.fifaCode+'">'+t.nameCN+'</option>'; });
+    html += '</select> <span style="margin:0 8px;font-weight:700;">VS</span> <select id="teamB" onchange="calcMatchup()"><option value="">'+(typeof L!=='undefined'?L('选择球队B'):'选择球队B')+'</option>';
+    teams.forEach(function(t){ html+='<option value="'+t.fifaCode+'">'+t.nameCN+'</option>'; });
+    html += '</select>';
+    document.getElementById('matchup-selector').innerHTML = html;
+  }
 
-  // 比赛胜率计算器
-  var selectorHTML = '<select id="select-team-a" onchange="updateMatchup()"><option value="">-- <span data-i18n="选择球队A">选择球队A</span> --</option>';
-  TEAMS.forEach(function(t) {
-    selectorHTML += '<option value="' + t.fifaCode + '">' + t.nameCN + ' (' + t.fifaCode + ') #' + t.fifaRank + '</option>';
-  });
-  selectorHTML += '</select>';
-  selectorHTML += '<select id="select-team-b" onchange="updateMatchup()"><option value="">-- <span data-i18n="选择球队B">选择球队B</span> --</option>';
-  TEAMS.forEach(function(t) {
-    selectorHTML += '<option value="' + t.fifaCode + '">' + t.nameCN + ' (' + t.fifaCode + ') #' + t.fifaRank + '</option>';
-  });
-  selectorHTML += '</select>';
-  document.getElementById('matchup-selector').innerHTML = selectorHTML;
-
-  window.updateMatchup = function() {
-    var codeA = document.getElementById('select-team-a').value;
-    var codeB = document.getElementById('select-team-b').value;
-    if (!codeA || !codeB || codeA === codeB) {
-      document.getElementById('team-a-display').innerHTML = '<p class="text-muted">' + (codeA ? getTeamByCode(codeA).nameCN : L("选择球队A")) + '</p>';
-      document.getElementById('team-b-display').innerHTML = '<p class="text-muted">' + (codeB ? getTeamByCode(codeB).nameCN : L("选择球队B")) + '</p>';
-      document.getElementById('matchup-bars').innerHTML = '';
-      return;
-    }
-
-    var a = getTeamByCode(codeA);
-    var b = getTeamByCode(codeB);
-    var probs = calcMatchProbability(a, b);
-
-    document.getElementById('team-a-display').innerHTML = '<img src="' + a.flag + '" alt=""><div class="compare-team-name">' + a.nameCN + '</div><div style="font-size:13px;color:var(--text-secondary);">FIFA #' + a.fifaRank + '</div>';
-    document.getElementById('team-b-display').innerHTML = '<img src="' + b.flag + '" alt=""><div class="compare-team-name">' + b.nameCN + '</div><div style="font-size:13px;color:var(--text-secondary);">FIFA #' + b.fifaRank + '</div>';
-
+  window.calcMatchup = function() {
+    var ca = document.getElementById('teamA').value;
+    var cb = document.getElementById('teamB').value;
+    if (!ca || !cb) return;
+    var a = getTeamByCode(ca), b = getTeamByCode(cb);
+    var p = calcMatchProbability(a, b);
+    document.getElementById('team-a-display').innerHTML = '<img src="'+a.flag+'" alt="" style="width:48px;height:36px;"><div class="compare-team-name">'+a.nameCN+'</div>';
+    document.getElementById('team-b-display').innerHTML = '<img src="'+b.flag+'" alt="" style="width:48px;height:36px;"><div class="compare-team-name">'+b.nameCN+'</div>';
     document.getElementById('matchup-bars').innerHTML =
-      '<div class="compare-bar-row"><span class="compare-bar-label">' + a.nameCN + '胜</span><div class="compare-bar-track"><div class="compare-bar-fill win" style="width:' + probs.homeWin + '%"></div></div><span style="font-weight:600;min-width:50px;text-align:right;">' + probs.homeWin + '%</span></div>' +
-      '<div class="compare-bar-row"><span class="compare-bar-label">平局</span><div class="compare-bar-track"><div class="compare-bar-fill draw" style="width:' + probs.draw + '%"></div></div><span style="font-weight:600;min-width:50px;text-align:right;">' + probs.draw + '%</span></div>' +
-      '<div class="compare-bar-row"><span class="compare-bar-label">' + b.nameCN + '胜</span><div class="compare-bar-track"><div class="compare-bar-fill lose" style="width:' + probs.awayWin + '%"></div></div><span style="font-weight:600;min-width:50px;text-align:right;">' + probs.awayWin + '%</span></div>';
+      '<div style="margin:8px 0;"><span style="font-weight:600;">'+a.nameCN+':</span> <div class="prob-bar-bg"><div class="prob-bar" style="width:'+p.homeWin+'%;background:var(--accent);height:20px;"></div></div> <span style="font-weight:700;color:var(--accent);">'+p.homeWin+'%</span></div>'+
+      '<div style="margin:8px 0;"><span style="font-weight:600;">Draw:</span> <div class="prob-bar-bg"><div class="prob-bar" style="width:'+p.draw+'%;background:var(--text-tertiary);height:20px;"></div></div> <span style="font-weight:700;">'+p.draw+'%</span></div>'+
+      '<div style="margin:8px 0;"><span style="font-weight:600;">'+b.nameCN+':</span> <div class="prob-bar-bg"><div class="prob-bar" style="width:'+p.awayWin+'%;background:var(--danger);height:20px;"></div></div> <span style="font-weight:700;color:var(--danger);">'+p.awayWin+'%</span></div>';
   };
 
-  // 小组出线概率
-  var groups = getAllGroups();
-  var qualTabsHTML = '';
-  groups.forEach(function(g, i) {
-    qualTabsHTML += '<span class="group-tab' + (i === 0 ? ' active' : '') + '" data-group="' + g + '">' + g + L('组')</span>';
-  });
-  document.getElementById('qual-group-tabs').innerHTML = qualTabsHTML;
+  renderMatchup();
 
-  function renderQualGroup(group) {
-    var probs = calcGroupQualification(group);
-    var html = '<table class="data-table"><thead><tr><th data-i18n="排名">排名</th><th data-i18n="球队">球队</th><th>FIFA Rank</th><th>出线概率</th><th data-i18n="概率条">概率条</th></tr></thead><tbody>';
-    probs.forEach(function(p, i) {
-      html += '<tr>' +
-        '<td>' + (i+1) + '</td>' +
-        '<td><div class="prob-cell"><img class="prob-flag" src="' + p.flag + '" alt=""><span>' + p.name + '</span></div></td>' +
-        '<td>#' + p.fifaRank + '</td>' +
-        '<td style="font-weight:600;">' + p.qualifyProb + '%</td>' +
-        '<td><div class="prob-bar-bg"><div class="prob-bar" style="width:' + p.qualifyProb + '%"></div></div></td>' +
-      '</tr>';
+  // ===== 小组出线概率 =====
+  function renderGroupQual() {
+    var groups = getAllGroups();
+    var tabsHTML = groups.map(function(g){ return '<span class="group-tab'+(g===groups[0]?' active':'')+'" onclick="showQualGroup(\''+g+'\')">'+g+'</span>'; }).join('');
+    document.getElementById('qual-group-tabs').innerHTML = tabsHTML;
+    showQualGroup(groups[0]);
+  }
+
+  window.showQualGroup = function(group) {
+    var tabs = document.querySelectorAll('#qual-group-tabs .group-tab');
+    tabs.forEach(function(t){ t.classList.toggle('active', t.textContent === group); });
+    var qp = calcGroupQualification(group);
+    var html = '<table class="data-table"><thead><tr><th>#</th><th>Team</th><th>FIFA</th><th>Qualify %</th></tr></thead><tbody>';
+    qp.forEach(function(t,i){
+      html += '<tr><td>'+(i+1)+'</td><td><img src="'+t.flag+'" style="width:24px;height:18px;vertical-align:middle;margin-right:6px;">'+t.name+'</td><td>#'+t.fifaRank+'</td><td><b>'+t.qualifyProb+'%</b></td></tr>';
     });
     html += '</tbody></table>';
     document.getElementById('qual-group-result').innerHTML = html;
-  }
+  };
 
-  renderQualGroup(groups[0]);
+  renderGroupQual();
 
-  document.getElementById('qual-group-tabs').addEventListener('click', function(e) {
-    if (e.target.classList.contains('group-tab')) {
-      document.querySelectorAll('#qual-group-tabs .group-tab').forEach(function(t) { t.classList.remove('active'); });
-      e.target.classList.add('active');
-      renderQualGroup(e.target.dataset.group);
-    }
-  });
+  window.renderLang = function() { renderMatchup(); };
 })();
 </script>
 </body>
